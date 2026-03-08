@@ -1,0 +1,56 @@
+﻿Γ£à Database connection established using PostgreSQL (Digital Ocean)
+Γ£à Found 45 tables:
+- [public] admin_actions
+- [public] agent_activities
+- [public] agent_profiles
+- [public] bets
+- [public] betting_tasks
+- [public] coin_flip_games
+- [public] database_connections
+- [public] deposit_requests
+- [public] device_logins
+- [public] game_analytics
+- [public] games
+- [public] global_freeze_sessions
+- [public] global_freeze_snapshots
+- [public] golden_live_events
+- [public] golden_live_stats
+- [public] n1panel_reaction_orders
+- [public] notifications
+- [public] page_views
+- [public] passkeys
+- [public] password_reset_tokens
+- [public] predicted_results
+- [public] promo_code_redemptions
+- [public] promo_codes
+- [public] push_subscriptions
+- [public] quick_replies
+- [public] referrals
+- [public] session
+- [public] support_chat_messages
+- [public] support_chat_sessions
+- [public] system_settings
+- [public] telegram_groups
+- [public] telegram_login_sessions
+- [public] telegram_photo_schedules
+- [public] telegram_photo_scripts
+- [public] telegram_reaction_orders
+- [public] telegram_reaction_settings
+- [public] telegram_scheduled_posts
+- [public] telegram_signals
+- [public] transactions
+- [public] user_betting_task_progress
+- [public] user_sessions
+- [public] users
+- [public] vip_level_telegram_links
+- [public] vip_settings
+- [public] withdrawal_requests
+
+Γ£à Total users: 5
+
+Γ£à First 10 users:
+- c6d8fdb5-f368-498c-8670-e87e7b32f7ce: pursuer.ail-4d@icloud.com
+- b9d7312b-1ff9-45f9-992e-05bdc47f4316: player1@demo.com
+- da4a65be-3344-4a13-bdbe-77b6c0cb907e: player2@demo.com
+- 9a49fd37-d719-4e5c-bcfc-4fc31bce1573: player3@demo.com
+- 1ff86f8b-25f1-41a5-91ac-7815e4f667d6: agent@test.com

@@ -1,0 +1,14 @@
+node_modules
+dist
+.DS_Store
+server/public
+vite.config.ts.*
+*.tar.gz
+
+# Android signing secrets
+android/key.properties
+android/app/*.jks
+android/app/*.keystore
+*.jks
+*.keystore
+.env

@@ -1,0 +1,1669 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(260, 30%, 15%);
+  --foreground: hsl(0, 0%, 98%);
+  --card: hsl(260, 25%, 18%);
+  --card-foreground: hsl(0, 0%, 95%);
+  --popover: hsl(260, 25%, 18%);
+  --popover-foreground: hsl(0, 0%, 95%);
+  --primary: hsl(217, 91%, 60%);
+  --primary-foreground: hsl(0, 0%, 98%);
+  --secondary: hsl(260, 20%, 25%);
+  --secondary-foreground: hsl(0, 0%, 95%);
+  --muted: hsl(260, 15%, 30%);
+  --muted-foreground: hsl(240, 5%, 65%);
+  --accent: hsl(217, 91%, 60%);
+  --accent-foreground: hsl(0, 0%, 98%);
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --border: hsl(260, 20%, 25%);
+  --input: hsl(260, 20%, 20%);
+  --ring: hsl(217, 91%, 60%);
+  --admin-gradient: linear-gradient(135deg, hsl(217, 91%, 60%) 0%, hsl(260, 70%, 65%) 50%, hsl(280, 80%, 70%) 100%);
+  --admin-card: hsl(260, 20%, 20%);
+  --admin-accent: hsl(217, 91%, 60%);
+  --admin-glow: hsl(260, 70%, 65%);
+  --chart-1: hsl(217, 91%, 60%);
+  --chart-2: hsl(159.7826, 100%, 36.0784%);
+  --chart-3: hsl(42.0290, 92.8251%, 56.2745%);
+  --chart-4: hsl(147.1429, 78.5047%, 41.9608%);
+  --chart-5: hsl(341.4894, 75.2000%, 50.9804%);
+  --font-sans: 'Inter', sans-serif;
+  --font-serif: Georgia, serif;
+  --font-mono: Menlo, monospace;
+  --radius: 16px;
+}
+
+.dark {
+  --background: hsl(217, 91%, 10%);
+  --foreground: hsl(210, 11%, 95%);
+  --card: hsl(217, 91%, 15%);
+  --card-foreground: hsl(210, 11%, 95%);
+  --popover: hsl(217, 91%, 15%);
+  --popover-foreground: hsl(210, 11%, 95%);
+  --primary: hsl(45, 100%, 55%);
+  --primary-foreground: hsl(210, 11%, 10%);
+  --secondary: hsl(217, 91%, 20%);
+  --secondary-foreground: hsl(210, 11%, 95%);
+  --muted: hsl(217, 91%, 25%);
+  --muted-foreground: hsl(210, 11%, 65%);
+  --accent: hsl(45, 100%, 55%);
+  --accent-foreground: hsl(210, 11%, 10%);
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(210, 11%, 95%);
+  --border: hsl(217, 91%, 25%);
+  --input: hsl(217, 91%, 20%);
+  --ring: hsl(43, 96%, 50%);
+  --admin-glow: hsl(260, 70%, 65%);
+  --chart-1: hsl(203.8863, 88.2845%, 53.1373%);
+  --chart-2: hsl(159.7826, 100%, 36.0784%);
+  --chart-3: hsl(42.0290, 92.8251%, 56.2745%);
+  --chart-4: hsl(147.1429, 78.5047%, 41.9608%);
+  --chart-5: hsl(341.4894, 75.2000%, 50.9804%);
+  --sidebar: hsl(217, 91%, 15%);
+  --sidebar-foreground: hsl(210, 11%, 95%);
+  --sidebar-primary: hsl(43, 96%, 50%);
+  --sidebar-primary-foreground: hsl(210, 11%, 10%);
+  --sidebar-accent: hsl(217, 91%, 25%);
+  --sidebar-accent-foreground: hsl(43, 96%, 50%);
+  --sidebar-border: hsl(217, 91%, 25%);
+  --sidebar-ring: hsl(43, 96%, 50%);
+  --font-sans: 'Inter', sans-serif;
+  --font-serif: Georgia, serif;
+  --font-mono: Menlo, monospace;
+  --radius: 12px;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+
+  /* iOS PWA Touch Optimization */
+  button, a, input, select, textarea {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    touch-action: manipulation;
+  }
+
+  /* Prevent double-tap zoom on iOS */
+  * {
+    touch-action: manipulation;
+  }
+
+  /* Improve iOS PWA button responsiveness */
+  button:active,
+  a:active {
+    opacity: 0.8;
+  }
+}
+
+@layer components {
+  /* iOS PWA Safe Area Utilities */
+  .safe-area-top {
+    padding-top: constant(safe-area-inset-top);
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-area-bottom {
+    padding-bottom: constant(safe-area-inset-bottom);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-area-left {
+    padding-left: constant(safe-area-inset-left);
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .safe-area-right {
+    padding-right: constant(safe-area-inset-right);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  .betting-button {
+    @apply transition-all duration-200 ease-in-out;
+    box-shadow: 
+      0 4px 8px rgba(0, 0, 0, 0.2),
+      0 2px 4px rgba(0, 0, 0, 0.1),
+      inset 0 1px 2px rgba(255, 255, 255, 0.1);
+  }
+  
+  .betting-button:hover {
+    @apply transform -translate-y-1 scale-105;
+    will-change: transform;
+    box-shadow: 
+      0 8px 16px rgba(0, 0, 0, 0.3),
+      0 4px 8px rgba(0, 0, 0, 0.2),
+      inset 0 2px 4px rgba(255, 255, 255, 0.2);
+  }
+  
+  .betting-button:active {
+    @apply transform translate-y-0 scale-100;
+    box-shadow: 
+      0 2px 4px rgba(0, 0, 0, 0.2),
+      inset 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .game-number {
+    @apply transition-all duration-200 ease-in-out;
+    box-shadow: 
+      0 6px 12px rgba(0, 0, 0, 0.25),
+      0 3px 6px rgba(0, 0, 0, 0.15),
+      inset 0 2px 4px rgba(255, 255, 255, 0.2),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .game-number:hover {
+    @apply transform scale-110 -translate-y-1;
+    will-change: transform;
+    box-shadow: 
+      0 10px 20px rgba(0, 0, 0, 0.3),
+      0 5px 10px rgba(0, 0, 0, 0.2),
+      inset 0 2px 4px rgba(255, 255, 255, 0.3),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .game-number:active {
+    @apply transform scale-100 translate-y-0;
+    box-shadow: 
+      0 2px 4px rgba(0, 0, 0, 0.2),
+      inset 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .admin-gradient {
+    background: var(--admin-gradient);
+  }
+
+  .admin-card {
+    background: var(--admin-card);
+    border: 1px solid var(--admin-border, var(--border));
+    backdrop-filter: blur(10px);
+  }
+
+  .admin-glow {
+    box-shadow: 0 0 20px color-mix(in srgb, var(--admin-glow) 30%, transparent);
+  }
+
+  .admin-header {
+    background: var(--admin-gradient);
+    border-bottom: 2px solid var(--admin-accent);
+  }
+
+  .neon-text {
+    text-shadow: 0 0 10px var(--admin-glow), 0 0 20px var(--admin-glow), 0 0 30px var(--admin-glow);
+  }
+
+  .pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite alternate;
+  }
+
+  @keyframes pulse-glow {
+    from {
+      box-shadow: 0 0 20px color-mix(in srgb, var(--admin-glow) 30%, transparent);
+    }
+    to {
+      box-shadow: 0 0 30px color-mix(in srgb, var(--admin-glow) 60%, transparent);
+    }
+  }
+
+  .icon-3d {
+    box-shadow: 
+      0 8px 16px rgba(0, 0, 0, 0.3),
+      0 4px 8px rgba(0, 0, 0, 0.2),
+      inset 0 2px 4px rgba(255, 255, 255, 0.2),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .icon-3d:hover {
+    box-shadow: 
+      0 12px 24px rgba(0, 0, 0, 0.4),
+      0 6px 12px rgba(0, 0, 0, 0.3),
+      inset 0 2px 4px rgba(255, 255, 255, 0.3),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .text-shadow-3d {
+    text-shadow: 
+      1px 1px 2px rgba(0, 0, 0, 0.3),
+      0 0 4px rgba(255, 255, 255, 0.5);
+  }
+
+  @keyframes icon-float {
+    0%, 100% {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+    50% {
+      transform: translate3d(0, -2px, 0) scale(1.02);
+    }
+  }
+
+  .icon-3d:hover {
+    animation: icon-float 2s ease-in-out infinite;
+  }
+
+  .card-3d {
+    box-shadow: 
+      0 10px 20px rgba(0, 0, 0, 0.2),
+      0 6px 12px rgba(0, 0, 0, 0.1),
+      inset 0 1px 2px rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .golden-gradient {
+    background: linear-gradient(
+      135deg,
+      #fbbf24 0%,
+      #f59e0b 25%,
+      #d97706 50%,
+      #f59e0b 75%,
+      #fbbf24 100%
+    );
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -200px 0;
+    }
+    100% {
+      background-position: 200px 0;
+    }
+  }
+
+  .shimmer-effect {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.2),
+      transparent
+    );
+    background-size: 200px 100%;
+    animation: shimmer 2s infinite;
+  }
+
+  /* Enhanced 3D Logo Styles */
+  .logo-3d-container {
+    transform-style: preserve-3d;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.3));
+  }
+
+  .logo-3d-container:hover {
+    transform: translateY(-3px) rotateX(5deg) rotateY(-5deg) scale(1.05);
+    filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.4));
+  }
+
+  .logo-3d-main {
+    box-shadow: 
+      0 0 0 1px rgba(255, 255, 255, 0.1),
+      0 8px 16px rgba(0, 0, 0, 0.4),
+      0 16px 32px rgba(0, 0, 0, 0.2),
+      inset 0 1px 2px rgba(255, 255, 255, 0.3),
+      inset 0 -1px 2px rgba(0, 0, 0, 0.2);
+    transform: translateZ(10px);
+  }
+
+  .logo-number-3d {
+    text-shadow: 
+      0 1px 2px rgba(0, 0, 0, 0.6),
+      0 2px 4px rgba(0, 0, 0, 0.3),
+      1px 1px 2px rgba(255, 255, 255, 0.2);
+    background: linear-gradient(145deg, #1a1a1a 0%, #4a4a4a 50%, #1a1a1a 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.1));
+  }
+
+  .logo-text-3d {
+    background: linear-gradient(
+      145deg,
+      #fbbf24 0%,
+      #f59e0b 20%,
+      #fff 40%,
+      #f59e0b 60%,
+      #d97706 80%,
+      #fbbf24 100%
+    );
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    text-shadow: 
+      0 2px 4px rgba(0, 0, 0, 0.5),
+      0 0 8px rgba(251, 191, 36, 0.3);
+    filter: drop-shadow(0 0 4px rgba(251, 191, 36, 0.2));
+  }
+
+  .shimmer-overlay {
+    background: linear-gradient(
+      110deg,
+      transparent 30%,
+      rgba(255, 255, 255, 0.3) 50%,
+      transparent 70%
+    );
+    transform: translateX(-100%);
+    transition: transform 0.6s ease;
+  }
+
+  .group:hover .shimmer-overlay {
+    transform: translateX(100%);
+  }
+
+
+  .pulse-light {
+    animation: pulse-light 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-light {
+    0%, 100% {
+      opacity: 0.6;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.1);
+    }
+  }
+
+  .pulse-light-delay {
+    animation: pulse-light-delay 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-light-delay {
+    0%, 100% {
+      opacity: 0.4;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.8;
+      transform: scale(1.05);
+    }
+  }
+
+  /* 3XBET Teal and Green Theme */
+  .logo-3d-teal-container {
+    transform-style: preserve-3d;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.3));
+  }
+
+  .logo-3d-teal-container:hover {
+    transform: translateY(-4px) rotateX(8deg) rotateY(-8deg) scale(1.08);
+    filter: drop-shadow(0 16px 32px rgba(0, 0, 0, 0.4));
+  }
+
+  .logo-3d-teal-main {
+    box-shadow: 
+      0 0 0 1px rgba(255, 255, 255, 0.1),
+      0 10px 20px rgba(0, 0, 0, 0.4),
+      0 20px 40px rgba(0, 0, 0, 0.2),
+      inset 0 2px 4px rgba(255, 255, 255, 0.3),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.2);
+    transform: translateZ(15px);
+  }
+
+  .logo-number-3d-teal {
+    text-shadow: 
+      0 2px 4px rgba(0, 0, 0, 0.7),
+      0 4px 8px rgba(0, 0, 0, 0.3),
+      2px 2px 4px rgba(255, 255, 255, 0.2);
+    background: linear-gradient(145deg, #134e4a 0%, #2dd4bf 30%, #5eead4 50%, #2dd4bf 70%, #134e4a 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    filter: drop-shadow(0 0 3px rgba(45, 212, 191, 0.3));
+  }
+
+  .logo-text-3d-teal {
+    background: linear-gradient(
+      145deg,
+      #2dd4bf 0%,
+      #5eead4 15%,
+      #ffffff 25%,
+      #22c55e 35%,
+      #16a34a 50%,
+      #22c55e 65%,
+      #5eead4 85%,
+      #2dd4bf 100%
+    );
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    text-shadow: 
+      0 3px 6px rgba(0, 0, 0, 0.6),
+      0 0 12px rgba(45, 212, 191, 0.4);
+    filter: drop-shadow(0 0 6px rgba(45, 212, 191, 0.3));
+  }
+
+  .shimmer-overlay-teal {
+    background: linear-gradient(
+      110deg,
+      transparent 25%,
+      rgba(45, 212, 191, 0.4) 45%,
+      rgba(255, 255, 255, 0.6) 50%,
+      rgba(34, 197, 94, 0.4) 55%,
+      transparent 75%
+    );
+    transform: translateX(-100%);
+    transition: transform 0.8s ease;
+  }
+
+  .group:hover .shimmer-overlay-teal {
+    transform: translateX(100%);
+  }
+
+  @keyframes shimmer-teal {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  .animate-shimmer-teal {
+    animation: shimmer-teal 2s ease-in-out infinite;
+  }
+
+  /* Gold-themed 3D Logo Styles for "X" */
+  .logo-3d-gold-container {
+    transform-style: preserve-3d;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.3));
+  }
+
+  .logo-3d-gold-container:hover {
+    transform: translateY(-4px) rotateX(8deg) rotateY(-8deg) scale(1.08);
+    filter: drop-shadow(0 16px 32px rgba(0, 0, 0, 0.4));
+  }
+
+  .logo-3d-gold-main {
+    box-shadow: 
+      0 0 0 1px rgba(255, 255, 255, 0.1),
+      0 10px 20px rgba(0, 0, 0, 0.4),
+      0 20px 40px rgba(0, 0, 0, 0.2),
+      inset 0 2px 4px rgba(255, 255, 255, 0.3),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.2);
+    transform: translateZ(15px);
+  }
+
+  .logo-number-3d-gold {
+    text-shadow: 
+      0 2px 4px rgba(0, 0, 0, 0.7),
+      0 4px 8px rgba(0, 0, 0, 0.3),
+      2px 2px 4px rgba(255, 255, 255, 0.2);
+    background: linear-gradient(145deg, #b45309 0%, #f59e0b 30%, #fbbf24 50%, #f59e0b 70%, #b45309 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    filter: drop-shadow(0 0 3px rgba(245, 158, 11, 0.3));
+  }
+
+  .shimmer-overlay-gold {
+    background: linear-gradient(
+      110deg,
+      transparent 25%,
+      rgba(245, 158, 11, 0.4) 45%,
+      rgba(255, 255, 255, 0.6) 50%,
+      rgba(251, 191, 36, 0.4) 55%,
+      transparent 75%
+    );
+    transform: translateX(-100%);
+    transition: transform 0.8s ease;
+  }
+
+  .group:hover .shimmer-overlay-gold {
+    transform: translateX(100%);
+  }
+
+  @keyframes shimmer-gold {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  .animate-shimmer-gold {
+    animation: shimmer-gold 2s ease-in-out infinite;
+  }
+
+  /* Blue-themed 3D Logo Styles for "BET" */
+  .logo-3d-blue-container {
+    transform-style: preserve-3d;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.3));
+  }
+
+  .logo-3d-blue-container:hover {
+    transform: translateY(-4px) rotateX(8deg) rotateY(-8deg) scale(1.08);
+    filter: drop-shadow(0 16px 32px rgba(0, 0, 0, 0.4));
+  }
+
+  .logo-3d-blue-main {
+    box-shadow: 
+      0 0 0 1px rgba(255, 255, 255, 0.1),
+      0 10px 20px rgba(0, 0, 0, 0.4),
+      0 20px 40px rgba(0, 0, 0, 0.2),
+      inset 0 2px 4px rgba(255, 255, 255, 0.3),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.2);
+    transform: translateZ(15px);
+  }
+
+  .logo-number-3d-blue {
+    text-shadow: 
+      0 2px 4px rgba(0, 0, 0, 0.7),
+      0 4px 8px rgba(0, 0, 0, 0.3),
+      2px 2px 4px rgba(255, 255, 255, 0.2);
+    background: linear-gradient(145deg, #1e40af 0%, #3b82f6 30%, #60a5fa 50%, #3b82f6 70%, #1e40af 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    filter: drop-shadow(0 0 3px rgba(59, 130, 246, 0.3));
+  }
+
+  .shimmer-overlay-blue {
+    background: linear-gradient(
+      110deg,
+      transparent 25%,
+      rgba(59, 130, 246, 0.4) 45%,
+      rgba(255, 255, 255, 0.6) 50%,
+      rgba(147, 197, 253, 0.4) 55%,
+      transparent 75%
+    );
+    transform: translateX(-100%);
+    transition: transform 0.8s ease;
+  }
+
+  .group:hover .shimmer-overlay-blue {
+    transform: translateX(100%);
+  }
+
+  @keyframes shimmer-blue {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  .animate-shimmer-blue {
+    animation: shimmer-blue 2s ease-in-out infinite;
+  }
+
+
+  /* Blue Glass Theme - Glassmorphism Base Styles - Optimized for performance */
+  .glass-card {
+    background: linear-gradient(
+      135deg,
+      rgba(59, 130, 246, 0.15) 0%,
+      rgba(99, 102, 241, 0.12) 25%,
+      rgba(139, 92, 246, 0.10) 50%,
+      rgba(59, 130, 246, 0.12) 75%,
+      rgba(79, 70, 229, 0.08) 100%
+    );
+    backdrop-filter: blur(28px) saturate(200%);
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    box-shadow: 
+      0 16px 48px rgba(0, 0, 0, 0.6),
+      0 8px 24px rgba(59, 130, 246, 0.15),
+      inset 0 2px 4px rgba(255, 255, 255, 0.15),
+      inset 0 -1px 2px rgba(0, 0, 0, 0.2);
+    position: relative;
+    overflow: hidden;
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+  
+  .glass-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 40%;
+    background: linear-gradient(
+      180deg,
+      rgba(59, 130, 246, 0.2) 0%,
+      rgba(255, 255, 255, 0.05) 50%,
+      transparent 100%
+    );
+    pointer-events: none;
+  }
+
+  .glass-dark {
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(59, 130, 246, 0.15);
+    box-shadow: 
+      0 12px 36px rgba(0, 0, 0, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
+  .glass-button {
+    background: linear-gradient(
+      135deg,
+      rgba(59, 130, 246, 0.2) 0%,
+      rgba(99, 102, 241, 0.15) 100%
+    );
+    backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 
+      0 8px 20px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
+  .glass-button:hover {
+    background: linear-gradient(
+      135deg,
+      rgba(59, 130, 246, 0.3) 0%,
+      rgba(99, 102, 241, 0.25) 100%
+    );
+    border-color: rgba(59, 130, 246, 0.5);
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 
+      0 12px 28px rgba(0, 0, 0, 0.4),
+      0 0 20px rgba(59, 130, 246, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
+
+  .glass-button:active {
+    transform: translateY(0) scale(0.98);
+    box-shadow: 
+      0 4px 12px rgba(0, 0, 0, 0.3),
+      inset 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .ios-blur {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  .glass-header {
+    -webkit-backdrop-filter: blur(28px) saturate(200%);
+  }
+  
+  @supports (-webkit-backdrop-filter: blur(20px)) {
+    .glass-card, .glass-button, .ios-blur {
+      -webkit-backdrop-filter: blur(20px);
+    }
+    
+    .glass-header {
+      -webkit-backdrop-filter: blur(28px) saturate(200%);
+    }
+  }
+  
+  /* Enhanced background above header utility */
+  .enhanced-header-bg {
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+  }
+  
+  @media (prefers-reduced-motion: reduce) {
+    .glass-header::before,
+    .glass-card:hover {
+      animation: none;
+    }
+    
+    /* Disable all animated orb effects for reduced motion */
+    .enhanced-header-bg .animate-pulse,
+    [data-testid="game-container"] .animate-pulse {
+      animation: none !important;
+      opacity: 0.6;
+    }
+    
+    @keyframes header-shimmer {
+      0%, 100% { left: -100%; opacity: 0; }
+    }
+  }
+
+  /* Glass Betting Buttons - Hardware accelerated for performance */
+  .glass-betting-button {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translate3d(0, 0, 0);
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
+  .glass-betting-button:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translate3d(0, -2px, 0) scale(1.02);
+    box-shadow: 
+      0 12px 24px rgba(0, 0, 0, 0.3),
+      0 6px 12px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  }
+
+  .glass-betting-button:active {
+    transform: translate3d(0, 0, 0) scale(0.98);
+    box-shadow: 
+      0 4px 8px rgba(0, 0, 0, 0.2),
+      inset 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .selected-glass-button {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(251, 191, 36, 0.6);
+    box-shadow: 
+      0 8px 16px rgba(0, 0, 0, 0.25),
+      0 0 20px rgba(251, 191, 36, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
+
+  /* Glass Number Buttons - Hardware accelerated for performance */
+  .glass-number-button {
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translate3d(0, 0, 0);
+    transform-style: preserve-3d;
+    position: relative;
+    overflow: hidden;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
+  .glass-number-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: translate3d(0, -1px, 0) scale(1.05);
+    box-shadow: 
+      0 8px 16px rgba(0, 0, 0, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  }
+
+  .glass-number-button:active {
+    transform: translate3d(0, 0, 0) scale(0.95);
+    box-shadow: 
+      0 2px 4px rgba(0, 0, 0, 0.2),
+      inset 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .selected-glass-number {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(251, 191, 36, 0.8);
+    box-shadow: 
+      0 6px 12px rgba(0, 0, 0, 0.3),
+      0 0 16px rgba(251, 191, 36, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
+
+  /* Enhanced Blue Glass Header - Optimized for performance */
+  .glass-header {
+    background: linear-gradient(
+      135deg,
+      rgba(15, 23, 42, 0.6) 0%,
+      rgba(30, 41, 59, 0.5) 25%,
+      rgba(59, 130, 246, 0.15) 50%,
+      rgba(99, 102, 241, 0.12) 75%,
+      rgba(15, 23, 42, 0.4) 100%
+    );
+    backdrop-filter: blur(32px) saturate(200%);
+    border-bottom: 2px solid rgba(59, 130, 246, 0.4);
+    box-shadow: 
+      0 12px 40px rgba(0, 0, 0, 0.5),
+      0 6px 20px rgba(59, 130, 246, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    position: relative;
+    overflow: hidden;
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+  
+  .glass-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(59, 130, 246, 0.2),
+      rgba(99, 102, 241, 0.15),
+      rgba(139, 92, 246, 0.1),
+      transparent
+    );
+    animation: header-shimmer 6s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+  
+  .glass-header > * {
+    position: relative;
+    z-index: 1;
+  }
+  
+  @keyframes header-shimmer {
+    0% { left: -100%; }
+    50% { left: 100%; }
+    100% { left: 100%; }
+  }
+
+  /* Scrolling announcement bar - Optimized for Android performance */
+  .announcement-scroll {
+    display: flex;
+    overflow: hidden;
+    width: 100%;
+  }
+
+  .announcement-content {
+    display: flex;
+    animation: scroll-announcement 20s linear infinite;
+    white-space: nowrap;
+    will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transform: translate3d(0, 0, 0);
+  }
+
+  @keyframes scroll-announcement {
+    0% {
+      transform: translate3d(0, 0, 0);
+    }
+    100% {
+      transform: translate3d(-50%, 0, 0);
+    }
+  }
+
+  .announcement-scroll:hover .announcement-content {
+    animation-play-state: paused;
+  }
+
+  /* USDT Icon Animation - Smooth continuous spinning effect */
+  .usdt-icon-animate {
+    animation: usdt-spin-continuous 2s linear infinite;
+    will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
+  @keyframes usdt-spin-continuous {
+    0% {
+      transform: rotate(0deg);
+      filter: drop-shadow(0 2px 8px rgba(80, 175, 149, 0.9));
+    }
+    50% {
+      filter: drop-shadow(0 2px 12px rgba(80, 175, 149, 1));
+    }
+    100% {
+      transform: rotate(360deg);
+      filter: drop-shadow(0 2px 8px rgba(80, 175, 149, 0.9));
+    }
+  }
+
+  .usdt-icon-animate:hover {
+    animation: usdt-spin-fast 1s linear infinite;
+  }
+
+  @keyframes usdt-spin-fast {
+    0% {
+      transform: rotate(0deg) scale(1.15);
+    }
+    100% {
+      transform: rotate(360deg) scale(1.15);
+    }
+  }
+
+  /* Floating animation for glass elements */
+  @keyframes glass-float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-2px);
+    }
+  }
+
+  .glass-card:hover {
+    animation: glass-float 3s ease-in-out infinite;
+  }
+
+  /* Blue Glass Card Dark Variant */
+  .glass-card-dark {
+    background: linear-gradient(
+      135deg,
+      rgba(15, 23, 42, 0.4) 0%,
+      rgba(59, 130, 246, 0.08) 25%,
+      rgba(99, 102, 241, 0.06) 50%,
+      rgba(139, 92, 246, 0.04) 75%,
+      rgba(15, 23, 42, 0.3) 100%
+    );
+    backdrop-filter: blur(32px) saturate(200%);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    box-shadow: 
+      0 20px 60px rgba(0, 0, 0, 0.7),
+      0 10px 30px rgba(59, 130, 246, 0.1),
+      inset 0 2px 4px rgba(255, 255, 255, 0.1),
+      inset 0 -1px 2px rgba(0, 0, 0, 0.3);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .glass-card-dark::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background: linear-gradient(
+      180deg,
+      rgba(59, 130, 246, 0.15) 0%,
+      rgba(255, 255, 255, 0.03) 50%,
+      transparent 100%
+    );
+    pointer-events: none;
+  }
+
+  /* iOS-style blur effects */
+  .ios-card {
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 
+      0 8px 32px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+
+  /* Falling Animation Container */
+  .falling-animation {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 1;
+    overflow: hidden;
+  }
+
+  /* Falling Particles */
+  .falling-particle {
+    position: absolute;
+    opacity: 0.7;
+    pointer-events: none;
+    will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
+  /* Golden Coin Particles */
+  .falling-coin {
+    width: 12px;
+    height: 12px;
+    background: radial-gradient(circle, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
+    border-radius: 50%;
+    box-shadow: 
+      0 0 6px rgba(251, 191, 36, 0.6),
+      0 0 12px rgba(245, 158, 11, 0.4),
+      0 0 18px rgba(218, 165, 32, 0.3);
+    animation: fall-coin linear infinite;
+    filter: brightness(1.1) contrast(1.2);
+  }
+
+  /* Diamond Sparkle Particles */
+  .falling-diamond {
+    width: 6px;
+    height: 6px;
+    background: linear-gradient(45deg, #ffffff, #e5e7eb, #9ca3af);
+    transform: rotate(45deg);
+    box-shadow: 
+      0 0 8px rgba(255, 255, 255, 0.8),
+      0 0 16px rgba(229, 231, 235, 0.6);
+    animation: fall-diamond linear infinite;
+  }
+
+  /* Purple Gem Particles */
+  .falling-gem {
+    width: 5px;
+    height: 8px;
+    background: linear-gradient(135deg, #a855f7, #7c3aed, #6366f1);
+    clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+    box-shadow: 
+      0 0 6px rgba(168, 85, 247, 0.6),
+      0 0 12px rgba(124, 58, 237, 0.4);
+    animation: fall-gem linear infinite;
+  }
+
+  /* Teal Star Particles */
+  .falling-star {
+    width: 6px;
+    height: 6px;
+    background: linear-gradient(45deg, #2dd4bf, #14b8a6, #0d9488);
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+    box-shadow: 
+      0 0 8px rgba(45, 212, 191, 0.7),
+      0 0 16px rgba(20, 184, 166, 0.5);
+    animation: fall-star linear infinite;
+  }
+
+  /* Falling Animations - Hardware accelerated with translate3d */
+  @keyframes fall-coin {
+    0% {
+      transform: translate3d(0, -100vh, 0) rotate(0deg) scale(0.8);
+      opacity: 0;
+    }
+    10% {
+      opacity: 0.7;
+    }
+    90% {
+      opacity: 0.7;
+    }
+    100% {
+      transform: translate3d(0, 100vh, 0) rotate(360deg) scale(1.2);
+      opacity: 0;
+    }
+  }
+
+  @keyframes fall-diamond {
+    0% {
+      transform: translate3d(0, -100vh, 0) rotate(45deg) scale(0.5);
+      opacity: 0;
+    }
+    15% {
+      opacity: 0.9;
+    }
+    85% {
+      opacity: 0.9;
+    }
+    100% {
+      transform: translate3d(0, 100vh, 0) rotate(225deg) scale(1.5);
+      opacity: 0;
+    }
+  }
+
+  @keyframes fall-gem {
+    0% {
+      transform: translate3d(0, -100vh, 0) rotate(0deg) scale(0.6);
+      opacity: 0;
+    }
+    20% {
+      opacity: 0.8;
+    }
+    80% {
+      opacity: 0.8;
+    }
+    100% {
+      transform: translate3d(0, 100vh, 0) rotate(180deg) scale(1.3);
+      opacity: 0;
+    }
+  }
+
+  @keyframes fall-star {
+    0% {
+      transform: translate3d(0, -100vh, 0) rotate(0deg) scale(0.7);
+      opacity: 0;
+    }
+    12% {
+      opacity: 1;
+    }
+    88% {
+      opacity: 1;
+    }
+    100% {
+      transform: translate3d(0, 100vh, 0) rotate(720deg) scale(1.4);
+      opacity: 0;
+    }
+  }
+
+  /* Mobile Performance Optimizations */
+  @media (max-width: 768px) {
+    /* Reduce expensive backdrop filters on mobile */
+    .glass-card,
+    .glass-card-dark,
+    .glass-button,
+    .card-3d,
+    .ios-card,
+    .glass-background,
+    .glass-header {
+      backdrop-filter: blur(8px) !important;
+      -webkit-backdrop-filter: blur(8px) !important;
+    }
+    
+    /* Completely disable blur on glass betting elements for better performance */
+    .glass-betting-button,
+    .glass-number-button {
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      background: rgba(255, 255, 255, 0.12) !important;
+    }
+    
+    /* Simplify box shadows on mobile */
+    .betting-button,
+    .game-number,
+    .casino-chip-button {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+    }
+    
+    .betting-button:hover,
+    .game-number:hover,
+    .casino-chip-button:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    }
+    
+    /* Simplified particle sizes */
+    .falling-coin {
+      width: 10px;
+      height: 10px;
+    }
+    
+    .falling-diamond {
+      width: 4px;
+      height: 4px;
+    }
+    
+    .falling-gem {
+      width: 4px;
+      height: 6px;
+    }
+    
+    .falling-star {
+      width: 5px;
+      height: 5px;
+    }
+    
+    /* Reduce text shadows on mobile */
+    .logo-text-3d,
+    .logo-text-3d-teal,
+    .logo-number-3d,
+    .logo-number-3d-teal,
+    .logo-number-3d-gold,
+    .logo-number-3d-blue,
+    .casino-number-shadow {
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+    }
+    
+    /* Disable complex filters on mobile */
+    .logo-3d-container,
+    .logo-3d-teal-container,
+    .logo-3d-gold-container,
+    .logo-3d-blue-container {
+      filter: none !important;
+    }
+    
+    /* Simplify casino chip animations */
+    .selected-casino-chip {
+      animation: none !important;
+      box-shadow: 0 0 10px rgba(251, 191, 36, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    }
+    
+    /* Optimize announcement scroll for mobile */
+    .announcement-content {
+      animation-duration: 25s !important;
+    }
+    
+    /* Disable USDT icon 3D animations on mobile */
+    .usdt-icon-animate {
+      animation: none !important;
+      transform: none !important;
+    }
+    
+    /* Disable hover animations on mobile */
+    .glass-card:hover,
+    .casino-chip-button:hover {
+      animation: none !important;
+    }
+  }
+
+  /* Reduced motion preferences */
+  @media (prefers-reduced-motion: reduce) {
+    .falling-particle {
+      animation-duration: 8s !important;
+      opacity: 0.3 !important;
+    }
+  }
+
+  /* Shimmer effect for buttons */
+  .glass-betting-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.2),
+      transparent
+    );
+    transition: left 0.5s;
+  }
+
+  .glass-betting-button:hover::before {
+    left: 100%;
+  }
+
+  /* Casino Chip Buttons */
+  .casino-chip-button {
+    width: 4.5rem;
+    height: 4.5rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-style: preserve-3d;
+    box-shadow: 
+      0 8px 16px rgba(0, 0, 0, 0.4),
+      0 4px 8px rgba(0, 0, 0, 0.3),
+      inset 0 2px 4px rgba(255, 255, 255, 0.2),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .casino-chip-button:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 
+      0 12px 24px rgba(0, 0, 0, 0.5),
+      0 8px 16px rgba(0, 0, 0, 0.4),
+      inset 0 2px 4px rgba(255, 255, 255, 0.3),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .casino-chip-button:active {
+    transform: translateY(-1px) scale(0.98);
+    box-shadow: 
+      0 4px 8px rgba(0, 0, 0, 0.3),
+      inset 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .selected-casino-chip {
+    transform: translateY(-2px) scale(1.1);
+    box-shadow: 
+      0 0 20px rgba(251, 191, 36, 0.6),
+      0 0 40px rgba(251, 191, 36, 0.4),
+      0 12px 24px rgba(0, 0, 0, 0.4),
+      inset 0 2px 4px rgba(255, 255, 255, 0.3);
+    animation: casino-chip-pulse 2s ease-in-out infinite;
+  }
+
+  .casino-number-shadow {
+    text-shadow: 
+      0 2px 4px rgba(0, 0, 0, 0.8),
+      0 1px 2px rgba(0, 0, 0, 0.6),
+      1px 1px 2px rgba(255, 255, 255, 0.1);
+    filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
+  }
+
+  @keyframes casino-chip-pulse {
+    0%, 100% {
+      box-shadow: 
+        0 0 20px rgba(251, 191, 36, 0.6),
+        0 0 40px rgba(251, 191, 36, 0.4),
+        0 12px 24px rgba(0, 0, 0, 0.4),
+        inset 0 2px 4px rgba(255, 255, 255, 0.3);
+    }
+    50% {
+      box-shadow: 
+        0 0 30px rgba(251, 191, 36, 0.8),
+        0 0 60px rgba(251, 191, 36, 0.6),
+        0 16px 32px rgba(0, 0, 0, 0.5),
+        inset 0 2px 4px rgba(255, 255, 255, 0.4);
+    }
+  }
+
+  /* Enhanced floating effect for casino chips */
+  @keyframes casino-float {
+    0%, 100% {
+      transform: translateY(-3px) scale(1.05) rotateX(0deg);
+    }
+    50% {
+      transform: translateY(-5px) scale(1.05) rotateX(2deg);
+    }
+  }
+
+  .casino-chip-button:hover {
+    animation: casino-float 2s ease-in-out infinite;
+  }
+
+  /* Premium metallic border effect */
+  .border-3 {
+    border-width: 3px;
+  }
+
+  /* Glass reflection effect for chips */
+  .casino-chip-button::after {
+    content: '';
+    position: absolute;
+    top: 10%;
+    left: 15%;
+    width: 30%;
+    height: 40%;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.4) 0%,
+      rgba(255, 255, 255, 0.1) 50%,
+      transparent 100%
+    );
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  /* Glassmorphism UI Effects */
+  .glass-background {
+    background: linear-gradient(135deg, 
+      rgba(138, 43, 226, 0.4) 0%, 
+      rgba(30, 64, 175, 0.4) 50%, 
+      rgba(59, 130, 246, 0.4) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  }
+
+  .glass-card-dark {
+    background: rgba(59, 130, 246, 0.1);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  }
+
+  .glass-button {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+  }
+
+  .glass-button:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  }
+
+  .gradient-bg-purple-blue {
+    background: linear-gradient(135deg, 
+      #0f172a 0%, 
+      #6b46c1 50%, 
+      #0f172a 100%);
+  }
+}
+
+/* Performance Mode: Disable all animations when preference is off */
+.animations-disabled * {
+  animation: none !important;
+  transition: none !important;
+}
+
+.animations-disabled *,
+.animations-disabled *::before,
+.animations-disabled *::after {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+}
+
+.animations-disabled .betting-button:hover,
+.animations-disabled .game-number:hover,
+.animations-disabled .icon-3d:hover,
+.animations-disabled .glass-button:hover,
+.animations-disabled .casino-chip-button:hover {
+  transform: none !important;
+  animation: none !important;
+}
+
+.animations-disabled .betting-button:active,
+.animations-disabled .game-number:active {
+  transform: none !important;
+}
+
+.animations-disabled .pulse-glow {
+  animation: none !important;
+  box-shadow: 0 0 20px hsl(270, 100%, 65%, 0.3) !important;
+}
+
+/* Wingo Mode Performance Optimizations - Optimized for low-end Android devices */
+.wingo-optimized {
+  contain: layout style paint;
+}
+
+.wingo-optimized * {
+  will-change: auto !important;
+}
+
+.wingo-optimized .casino-chip-button {
+  transition: transform 0.15s ease-out;
+  animation: none !important;
+}
+
+.wingo-optimized .casino-chip-button:hover {
+  animation: none !important;
+  transform: none !important;
+}
+
+.wingo-optimized .casino-chip-button:active {
+  transform: scale(0.95) !important;
+}
+
+.wingo-optimized .selected-casino-chip {
+  animation: none !important;
+  transform: scale(1.05) !important;
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+.wingo-optimized .glass-background {
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+.wingo-optimized .glass-card,
+.wingo-optimized .glass-card-dark {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.wingo-optimized .casino-chip-button::after {
+  display: none;
+}
+
+.wingo-optimized button {
+  transition: opacity 0.15s ease-out, transform 0.15s ease-out;
+}
+
+.wingo-optimized .betting-button:hover {
+  transform: none !important;
+  animation: none !important;
+}
+
+.wingo-optimized .game-number:hover {
+  transform: none !important;
+  animation: none !important;
+}
+
+.wingo-optimized .glass-button:hover {
+  transform: none !important;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.wingo-optimized [class*="animate-"] {
+  animation-duration: 0.3s !important;
+}
+
+.wingo-optimized .animate-pulse {
+  animation: none !important;
+  opacity: 1 !important;
+}
+
+.wingo-optimized *:hover {
+  will-change: auto !important;
+}
+
+/* Betting Tasks Page Animations */
+@keyframes blob {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+/* Admin Dashboard Themes */
+.admin-theme-purple {
+  --admin-gradient: linear-gradient(135deg, hsl(217, 91%, 60%) 0%, hsl(260, 70%, 65%) 50%, hsl(280, 80%, 70%) 100%);
+  --admin-card: hsl(260, 20%, 20%);
+  --admin-accent: hsl(217, 91%, 60%);
+  --admin-glow: hsl(270, 100%, 65%);
+  --admin-border: hsl(260, 20%, 25%);
+}
+
+.admin-theme-ocean {
+  --admin-gradient: linear-gradient(135deg, hsl(195, 85%, 45%) 0%, hsl(210, 90%, 55%) 50%, hsl(220, 85%, 65%) 100%);
+  --admin-card: hsl(210, 25%, 18%);
+  --admin-accent: hsl(195, 85%, 50%);
+  --admin-glow: hsl(195, 100%, 60%);
+  --admin-border: hsl(210, 25%, 25%);
+}
+
+.admin-theme-emerald {
+  --admin-gradient: linear-gradient(135deg, hsl(160, 80%, 45%) 0%, hsl(150, 75%, 50%) 50%, hsl(140, 80%, 55%) 100%);
+  --admin-card: hsl(160, 20%, 16%);
+  --admin-accent: hsl(160, 80%, 45%);
+  --admin-glow: hsl(160, 100%, 50%);
+  --admin-border: hsl(160, 20%, 23%);
+}
+
+.admin-theme-sunset {
+  --admin-gradient: linear-gradient(135deg, hsl(25, 95%, 55%) 0%, hsl(340, 85%, 60%) 50%, hsl(280, 75%, 65%) 100%);
+  --admin-card: hsl(25, 25%, 16%);
+  --admin-accent: hsl(25, 95%, 55%);
+  --admin-glow: hsl(25, 100%, 60%);
+  --admin-border: hsl(25, 25%, 23%);
+}
+
+.admin-theme-midnight {
+  --admin-gradient: linear-gradient(135deg, hsl(225, 40%, 15%) 0%, hsl(230, 45%, 20%) 50%, hsl(235, 40%, 25%) 100%);
+  --admin-card: hsl(230, 20%, 12%);
+  --admin-accent: hsl(225, 70%, 45%);
+  --admin-glow: hsl(225, 80%, 55%);
+  --admin-border: hsl(230, 20%, 18%);
+}
+
+.admin-theme-royal {
+  --admin-gradient: linear-gradient(135deg, hsl(45, 90%, 50%) 0%, hsl(35, 85%, 45%) 50%, hsl(25, 80%, 40%) 100%);
+  --admin-card: hsl(35, 20%, 16%);
+  --admin-accent: hsl(45, 90%, 50%);
+  --admin-glow: hsl(45, 100%, 60%);
+  --admin-border: hsl(35, 20%, 23%);
+}
+
+.admin-theme-crimson {
+  --admin-gradient: linear-gradient(135deg, hsl(350, 85%, 50%) 0%, hsl(340, 80%, 55%) 50%, hsl(330, 85%, 60%) 100%);
+  --admin-card: hsl(350, 20%, 16%);
+  --admin-accent: hsl(350, 85%, 50%);
+  --admin-glow: hsl(350, 100%, 60%);
+  --admin-border: hsl(350, 20%, 23%);
+}
+
+
+/* --- CRASH GAME VARIABLES --- */
+:root {
+  --crash-green: 142 71% 45%;
+  --crash-red: 0 84% 60%;
+  --crash-gold: 45 93% 58%;
+  --crash-surface: 222 35% 12%;
+  --crash-surface-light: 220 30% 18%;
+}
+
+.dark {
+  --crash-green: 142 71% 45%;
+  --crash-red: 0 84% 60%;
+  --crash-gold: 45 93% 58%;
+  --crash-surface: 222 35% 12%;
+  --crash-surface-light: 220 30% 18%;
+}
+
+/* --- CRASH GAME UTILITIES AND ANIMATIONS --- */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 12px 2px hsla(142, 71%, 45%, 0.3); }
+  50% { box-shadow: 0 0 24px 6px hsla(142, 71%, 45%, 0.5); }
+}
+
+@keyframes float-rocket {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes crash-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-3px); }
+  40% { transform: translateX(3px); }
+  60% { transform: translateX(-2px); }
+  80% { transform: translateX(2px); }
+}
+
+@keyframes slide-in-badge {
+  from { transform: translateX(-20px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 1.5s ease-in-out infinite;
+}
+
+.animate-float-rocket {
+  animation: float-rocket 1.5s ease-in-out infinite;
+}
+
+.animate-crash-shake {
+  animation: crash-shake 0.4s ease-out;
+}
+
+.animate-slide-badge {
+  animation: slide-in-badge 0.3s ease-out;
+}
