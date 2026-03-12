@@ -5,6 +5,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "./use-toast";
 import { goldCoinsToUsd } from "@/lib/currency";
 
+
+
+
 export type GamePhase = "waiting" | "countdown" | "flying" | "crashed";
 
 export interface BotPlayer {
@@ -49,6 +52,31 @@ export function useCrashGame() {
     queryKey: ['/api/crash/history'],
     enabled: !!user,
   });
+
+  // Fetch active bet on mount or user change
+  const { data: myBetData } = useQuery<{
+    hasBet: boolean;
+    amount: number;
+    cashedOut: boolean;
+    multiplier: number;
+    autoCashout?: number;
+  }>({
+    queryKey: ['/api/crash/my-bet'],
+    enabled: !!user,
+    staleTime: 0, // Always check on load
+  });
+
+  // Re-sync local state with server state on load
+  useEffect(() => {
+    if (myBetData?.hasBet) {
+      setCurrentBet(myBetData.amount);
+      setHasCashedOut(myBetData.cashedOut);
+      setCashOutMultiplier(myBetData.multiplier);
+      if (myBetData.cashedOut) {
+        setWinAmount(myBetData.amount * myBetData.multiplier);
+      }
+    }
+  }, [myBetData]);
 
   // Convert number array to HistoryEntry array (simplified for now)
   const history: HistoryEntry[] = useMemo(() => {
@@ -131,6 +159,25 @@ export function useCrashGame() {
     }
   }, [crashState?.gameId, crashState?.phase]);
 
+  // Refetch balance when game crashes — this is when win/loss is settled
+  useEffect(() => {
+    if (crashState?.phase === 'crashed') {
+      // Small delay so server has time to settle the bet
+      const t = setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/user/current'] });
+      }, 800);
+      return () => clearTimeout(t);
+    }
+  }, [crashState?.phase, queryClient]);
+
+  // Also refetch when phase changes back to waiting (new round ready)
+  useEffect(() => {
+    if (crashState?.phase === 'waiting') {
+      queryClient.invalidateQueries({ queryKey: ['/api/user/current'] });
+    }
+  }, [crashState?.phase, queryClient]);
+
   // Mutations
   const betMutation = useMutation({
     mutationFn: async ({ amount, autoCashout }: { amount: number, autoCashout?: number }) => {
@@ -146,9 +193,11 @@ export function useCrashGame() {
       return res.json();
     },
     onSuccess: (_, variables) => {
-      toast({ title: "Bet placed successfully" });
+      toast({ title: "✅ Bet placed!", description: `${Math.round(variables.amount * 100)} coins wagered` });
       setCurrentBet(variables.amount);
+      // Invalidate both query keys that LiveBalance might use
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/user/current'] });
     },
     onError: (error: any) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -168,11 +217,14 @@ export function useCrashGame() {
       return res.json();
     },
     onSuccess: (data) => {
-      toast({ title: `Cashed out at ${data.multiplier}x!`, description: `You won ${data.winAmount.toFixed(2)} coins.` });
+      const coinsWon = Math.round(data.winAmount * 100);
+      toast({ title: `💰 Cashed out at ${data.multiplier}x!`, description: `+${coinsWon} coins won!` });
       setHasCashedOut(true);
       setCashOutMultiplier(data.multiplier);
       setWinAmount(data.winAmount);
+      // Refetch balance immediately after cashout
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/user/current'] });
     },
     onError: (error: any) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -182,7 +234,8 @@ export function useCrashGame() {
   const placeBet = useCallback(() => {
     if (!user) return;
     if (currentBet > 0) return;
-    betMutation.mutate({ amount: goldCoinsToUsd(betAmount) });
+    betMutation.mutate({ amount: goldCoinsToUsd(betAmount) }); // Convert coins → USD for server (balance stored in USD)
+
   }, [user, betAmount, currentBet, betMutation]);
 
   const cashOut = useCallback(() => {

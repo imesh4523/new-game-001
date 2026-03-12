@@ -2484,7 +2484,23 @@ export async function registerRoutes(app: Express): Promise<{ httpServer: Server
   // The old auto-initialization code has been removed to prevent duplicate games
 
   // WebSocket connection handling
+  const wsClients = new Map<WebSocket, string>();
+
   wss.on('connection', async (ws) => {
+    ws.on('message', (message) => {
+      try {
+        const data = JSON.parse(message.toString());
+        if (data.type === 'auth' && data.userId) {
+          wsClients.set(ws, data.userId);
+        }
+      } catch (e) {
+        // ignore
+      }
+    });
+
+    ws.on('close', () => {
+      wsClients.delete(ws);
+    });
 
     // Send current active games
     for (const [duration, { game }] of Array.from(activeGames.entries())) {
@@ -15127,6 +15143,252 @@ export async function registerRoutes(app: Express): Promise<{ httpServer: Server
     }
   });
 
+  // Crash Game Admin Settings
+  app.get('/api/admin/crash/settings', requireAdmin, async (req, res) => {
+    try {
+      const settings = await storage.getCrashSettings();
+      res.json(settings);
+    } catch (error) {
+      console.error('Fetch crash settings error:', error);
+      res.status(500).json({ message: 'Failed to fetch crash settings' });
+    }
+  });
+
+  app.post('/api/admin/crash/settings', requireAdmin, async (req, res) => {
+    try {
+      const { houseEdge, maxMultiplier, minMultiplier, minBetAmount, maxBetAmount } = req.body;
+      const settings = await storage.updateCrashSettings({
+        houseEdge: String(houseEdge),
+        maxMultiplier: String(maxMultiplier),
+        minCrashMultiplier: String(minMultiplier),
+        ...(minBetAmount !== undefined && { minBetAmount: String(minBetAmount) }),
+        ...(maxBetAmount !== undefined && { maxBetAmount: String(maxBetAmount) }),
+      });
+      res.json(settings);
+    } catch (error) {
+      console.error('Update crash settings error:', error);
+      res.status(500).json({ message: 'Failed to update crash settings' });
+    }
+  });
+
+
+  app.get('/api/admin/advanced-crash/settings', requireAdmin, async (req, res) => {
+    try {
+      const settings = await storage.getAdvancedCrashSettings();
+      res.json(settings);
+    } catch (error) {
+      console.error('Fetch advanced crash settings error:', error);
+      res.status(500).json({ message: 'Failed to fetch advanced crash settings' });
+    }
+  });
+
+  app.post('/api/admin/advanced-crash/settings', requireAdmin, async (req, res) => {
+    try {
+      const settings = await storage.updateAdvancedCrashSettings(req.body);
+      res.json(settings);
+    } catch (error) {
+      console.error('Update advanced crash settings error:', error);
+      res.status(500).json({ message: 'Failed to update advanced crash settings' });
+    }
+  });
+
+  app.get('/api/admin/crash/stats', requireAdmin, async (req, res) => {
+    try {
+      const { pool: pgPool } = await import('./db');
+      if (!pgPool) {
+        return res.json({ totalGames: 0, totalBets: 0, totalWins: 0, totalHouseProfit: '0.00', totalWagered: '0.00', totalPayout: '0.00', winRate: '0.0', expectedProfit: '0.00', breakEvenNeeded: '0.00' });
+      }
+
+      const [r1, r2, r3, r4, r5, r6, r7] = await Promise.all([
+        pgPool.query("SELECT COUNT(*) as cnt FROM bets WHERE bet_type='crash'"),
+        pgPool.query("SELECT COUNT(*) as cnt FROM bets WHERE bet_type='crash' AND status='cashed_out'"),
+        pgPool.query("SELECT COALESCE(SUM(amount::numeric), 0) as total FROM bets WHERE bet_type='crash' AND status='lost'"),
+        pgPool.query("SELECT COALESCE(SUM(actual_payout::numeric), 0) as total FROM bets WHERE bet_type='crash' AND status='cashed_out'"),
+        pgPool.query("SELECT COUNT(DISTINCT game_id) as cnt FROM bets WHERE bet_type='crash'"),
+        // Total wagered = ALL crash bets (win + loss)
+        pgPool.query("SELECT COALESCE(SUM(amount::numeric), 0) as total FROM bets WHERE bet_type='crash'"),
+        // Total bet amount from winners only
+        pgPool.query("SELECT COALESCE(SUM(amount::numeric), 0) as total FROM bets WHERE bet_type='crash' AND status='cashed_out'"),
+      ]);
+
+      const totalBets = parseInt(r1.rows[0].cnt || '0');
+      const totalWins = parseInt(r2.rows[0].cnt || '0');
+      const lossIncome = parseFloat(r3.rows[0].total || '0');
+      const winPayout = parseFloat(r4.rows[0].total || '0');
+      const totalGames = parseInt(r5.rows[0].cnt || '0');
+      const totalWagered = parseFloat(r6.rows[0].total || '0');
+      const winBets = parseFloat(r7.rows[0].total || '0');
+
+      // House profit = what house gained from losses - what house paid out net to winners
+      const houseProfit = lossIncome - (winPayout - winBets);
+
+      // Win rate %
+      const winRate = totalBets > 0 ? ((totalWins / totalBets) * 100).toFixed(1) : '0.0';
+
+      // Expected profit at 20% house edge
+      const expectedProfit = (totalWagered * 0.20).toFixed(2);
+
+      // If house is in loss, how much more wagering is needed to break even (at 20% edge)
+      const breakEvenNeeded = houseProfit < 0 ? (Math.abs(houseProfit) / 0.20).toFixed(2) : '0.00';
+
+      // Total payout = actual_payout for all cashed-out bets
+      const totalPayout = winPayout.toFixed(2);
+
+      res.json({
+        totalGames,
+        totalBets,
+        totalWins,
+        totalHouseProfit: houseProfit.toFixed(2),
+        totalWagered: totalWagered.toFixed(2),
+        totalPayout,
+        winRate,
+        expectedProfit,
+        breakEvenNeeded,
+      });
+    } catch (error: any) {
+      console.error('Crash stats error:', error.message);
+      res.status(500).json({ message: 'Failed to fetch crash stats', error: error.message });
+    }
+  });
+
+  // Overall House Profit across ALL games
+  app.get('/api/admin/house-profit', requireAdmin, async (req, res) => {
+    try {
+      const { pool: pgPool } = await import('./db');
+      if (!pgPool) return res.json({ games: [], totalHouseProfit: '0.00' });
+
+      const r = await pgPool.query(`
+        SELECT 
+          bet_type,
+          COUNT(*) as total_bets,
+          COALESCE(SUM(amount::numeric), 0) as total_wagered,
+          COALESCE(SUM(CASE WHEN status IN ('cashed_out','won') THEN COALESCE(actual_payout::numeric, 0) ELSE 0 END), 0) as total_payout
+        FROM bets
+        GROUP BY bet_type
+        ORDER BY total_wagered DESC
+      `);
+
+      let totalWagered = 0, totalPayout = 0;
+      const games = r.rows.map((row: any) => {
+        const wagered = parseFloat(row.total_wagered);
+        const payout = parseFloat(row.total_payout);
+        const profit = wagered - payout;
+        totalWagered += wagered;
+        totalPayout += payout;
+        return {
+          betType: row.bet_type,
+          totalBets: parseInt(row.total_bets),
+          totalWagered: wagered.toFixed(2),
+          totalPayout: payout.toFixed(2),
+          houseProfit: profit.toFixed(2),
+          profitRate: wagered > 0 ? ((profit / wagered) * 100).toFixed(1) : '0.0',
+        };
+      });
+
+      res.json({
+        games,
+        totalWagered: totalWagered.toFixed(2),
+        totalPayout: totalPayout.toFixed(2),
+        totalHouseProfit: (totalWagered - totalPayout).toFixed(2),
+        overallProfitRate: totalWagered > 0 ? (((totalWagered - totalPayout) / totalWagered) * 100).toFixed(1) : '0.0',
+      });
+    } catch (error: any) {
+      console.error('House profit error:', error.message);
+      res.status(500).json({ message: 'Failed to fetch house profit', error: error.message });
+    }
+  });
+
+  // Per-user crash analytics for admin targeting leaderboard
+  app.get('/api/admin/crash/player-analytics', requireAdmin, async (req, res) => {
+    try {
+      const { pool: pgPool } = await import('./db');
+      if (!pgPool) return res.json([]);
+
+      const r = await pgPool.query(`
+        SELECT 
+          u.username,
+          u.id as user_id,
+          COUNT(*) as rounds_played,
+          SUM(b.amount::numeric) as total_wagered,
+          COALESCE(SUM(CASE WHEN b.status='cashed_out' THEN b.actual_payout::numeric ELSE 0 END), 0) as total_payout,
+          COUNT(CASE WHEN b.status='cashed_out' THEN 1 END) as wins,
+          COUNT(CASE WHEN b.status='lost' THEN 1 END) as losses,
+          SUM(b.amount::numeric) - COALESCE(SUM(CASE WHEN b.status='cashed_out' THEN b.actual_payout::numeric ELSE 0 END), 0) as house_profit_from_user
+        FROM bets b
+        JOIN users u ON b.user_id = u.id
+        WHERE b.bet_type = 'crash'
+        GROUP BY u.id, u.username
+        ORDER BY total_wagered DESC
+        LIMIT 50
+      `);
+
+      const players = r.rows.map((row: any) => {
+        const wagered = parseFloat(row.total_wagered);
+        const payout = parseFloat(row.total_payout);
+        const houseProfit = wagered - payout;
+        const wins = parseInt(row.wins);
+        const losses = parseInt(row.losses);
+        const rounds = parseInt(row.rounds_played);
+        return {
+          username: row.username,
+          userId: row.user_id,
+          roundsPlayed: rounds,
+          totalWagered: wagered.toFixed(2),
+          totalPayout: payout.toFixed(2),
+          wins,
+          losses,
+          winRate: rounds > 0 ? ((wins / rounds) * 100).toFixed(1) : '0.0',
+          houseProfit: houseProfit.toFixed(2),
+          isHotPlayer: wins >= 2 && payout > wagered,
+        };
+      });
+
+      res.json(players);
+    } catch (error: any) {
+      console.error('Player analytics error:', error.message);
+      res.status(500).json({ message: 'Failed to fetch player analytics', error: error.message });
+    }
+  });
+
+
+
+  app.get('/api/admin/crash/live', requireAdmin, async (req, res) => {
+    try {
+      const players = crashGameState.players.map(p => {
+        const pState = crashGameState.personalStates.get(p.userId);
+        return {
+          ...p,
+          isFake: p.userId.startsWith('fake_'),
+          personalTarget: pState ? pState.crashPoint : crashGameState.globalCrashPoint,
+          hasCrashed: pState ? pState.hasCrashed : false,
+          isHotPlayer: !p.userId.startsWith('fake_') ? isHotPlayer(p.userId) : false,
+        };
+      });
+
+      res.json({
+        phase: crashGameState.phase,
+        multiplier: crashGameState.multiplier,
+        globalCrashPoint: crashGameState.globalCrashPoint,
+        startTime: crashGameState.startTime,
+        gameId: crashGameState.gameId,
+        players,
+        // 🏦 House Always Wins — Live Session Data
+        houseSession: {
+          roundCount: houseSessionTracker.roundCount,
+          totalWagered: houseSessionTracker.totalWagered.toFixed(2),
+          totalPayout: houseSessionTracker.totalPayout.toFixed(2),
+          houseProfit: houseSessionTracker.houseProfit.toFixed(2),
+          profitRate: houseSessionTracker.profitRate.toFixed(1),
+          isUnderPressure: houseSessionTracker.isUnderPressure,
+          isPanicMode: houseSessionTracker.isPanicMode,
+        }
+      });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch live crash data' });
+    }
+  });
+
+
   // Telegram Signals routes
   app.get('/api/admin/telegram-signals', requireAdmin, async (req, res) => {
     try {
@@ -15342,7 +15604,7 @@ export async function registerRoutes(app: Express): Promise<{ httpServer: Server
   interface CrashGameState {
     phase: 'waiting' | 'flying' | 'crashed';
     multiplier: number;
-    crashPoint?: number;
+    globalCrashPoint?: number;
     startTime?: number;
     gameId?: string;
     players: Array<{
@@ -15353,74 +15615,235 @@ export async function registerRoutes(app: Express): Promise<{ httpServer: Server
       cashoutMultiplier?: number;
       autoCashout?: number;
     }>;
+    personalStates: Map<string, {
+      crashPoint: number;
+      hasCrashed: boolean;
+      crashedAtMultiplier: number;
+    }>;
   }
 
-  // Helper function to sanitize crash game state for broadcast (only fake players, NO real data)
-  function getSanitizedCrashStateToBroadcast() {
+  // Get personalized state for a specific user
+  function getPersonalizedCrashState(userId: string | null) {
     const fakePlayers = crashGameState.players.filter(p => p.userId.startsWith('fake_'));
+    let currentUserPlayer = null;
     
-    // Create completely new object without spreading (no references to original)
-    const sanitized: any = {
-      phase: crashGameState.phase,
-      multiplier: crashGameState.multiplier,
-      startTime: crashGameState.startTime,
-      gameId: crashGameState.gameId,
-      players: fakePlayers.map(p => ({
+    let isCrashed = crashGameState.phase === 'crashed';
+    let displayMultiplier = crashGameState.multiplier;
+    let explicitCrashPoint = crashGameState.globalCrashPoint;
+
+    if (userId) {
+      currentUserPlayer = crashGameState.players.find(p => p.userId === userId);
+      const pState = crashGameState.personalStates.get(userId);
+      if (pState) {
+        if (pState.hasCrashed) {
+          isCrashed = true;
+          displayMultiplier = pState.crashedAtMultiplier;
+          explicitCrashPoint = pState.crashedAtMultiplier;
+        }
+      }
+    }
+    
+    const playersToShow = [
+      ...(currentUserPlayer ? [{
+        username: 'You',
+        bet: currentUserPlayer.bet,
+        cashedOut: currentUserPlayer.cashedOut,
+        cashoutMultiplier: currentUserPlayer.cashoutMultiplier,
+      }] : []),
+      ...fakePlayers.map(p => ({
         username: p.username,
         bet: p.bet,
         cashedOut: p.cashedOut,
         cashoutMultiplier: p.cashoutMultiplier,
-      })),
-      totalPlayers: fakePlayers.length, // Only count fake players for broadcasts
+      }))
+    ];
+    
+    const sanitized: any = {
+      phase: isCrashed ? 'crashed' : crashGameState.phase,
+      multiplier: displayMultiplier,
+      startTime: crashGameState.startTime,
+      gameId: crashGameState.gameId,
+      players: playersToShow,
+      totalPlayers: fakePlayers.length + (currentUserPlayer ? 1 : 0),
     };
     
-    // Only add crashPoint if game has crashed
-    if (crashGameState.phase === 'crashed' && crashGameState.crashPoint) {
-      sanitized.crashPoint = crashGameState.crashPoint;
+    if (isCrashed && explicitCrashPoint) {
+      sanitized.crashPoint = explicitCrashPoint;
     }
     
     return sanitized;
+  }
+
+  // Send personalized updates to all websocket clients
+  function broadcastPersonalizedCrashUpdates(type: string) {
+    wss.clients.forEach(client => {
+      if (client.readyState === WebSocket.OPEN) {
+        const userId = wsClients.get(client) || null;
+        const state = getPersonalizedCrashState(userId);
+        client.send(JSON.stringify({ type, state }));
+      }
+    });
   }
 
   let crashGameState: CrashGameState = {
     phase: 'waiting',
     multiplier: 1.00,
     players: [],
+    personalStates: new Map()
   };
 
   let crashGameHistory: number[] = []; // Store last 15 crash points
   let crashGameInterval: NodeJS.Timeout | null = null;
   let crashGameTimer: NodeJS.Timeout | null = null;
   let isProcessingCashouts = false; // Prevent overlapping cashout processing
-  
 
-  // Generate random crash point (between 1.01x and 10.00x with bias towards lower values)
-  function generateCrashPoint(): number {
-    // Use exponential distribution for realistic crash game behavior
-    const random = Math.random();
-    const crashPoint = Math.max(1.01, Math.min(10, 1 / (1 - random * 0.99)));
-    return Math.round(crashPoint * 100) / 100;
+  // ============================================================
+  // 🏦 HOUSE ALWAYS WINS — 3-Layer Protection System
+  // ============================================================
+  
+  // Layer 1: Session-level financial tracker
+  const houseSessionTracker = {
+    totalWagered: 0,       // Sum of all crash bets this session
+    totalPayout: 0,        // Sum of all actual payouts this session
+    roundCount: 0,         // Rounds played this session
+    get houseProfit() { return this.totalWagered - this.totalPayout; },
+    get profitRate() { return this.totalWagered > 0 ? (this.houseProfit / this.totalWagered) * 100 : 0; },
+    get isUnderPressure() {
+      // Force pressure if house profit rate < 10% after at least 3 rounds
+      return this.roundCount >= 3 && this.profitRate < 10;
+    },
+    get isPanicMode() {
+      // PANIC: house is losing overall (negative profit)
+      return this.roundCount >= 2 && this.houseProfit < 0;
+    },
+    recordBet(amount: number) { this.totalWagered += amount; },
+    recordPayout(amount: number) { this.totalPayout += amount; },
+    recordRound() { this.roundCount++; },
+  };
+
+  // Layer 2: Per-user win streak tracker (in-memory, resets on server restart)
+  const userWinStreaks = new Map<string, { wins: number; losses: number; totalWon: number; totalLost: number; lastUpdated: number }>();
+
+  function getUserProfile(userId: string) {
+    if (!userWinStreaks.has(userId)) {
+      userWinStreaks.set(userId, { wins: 0, losses: 0, totalWon: 0, totalLost: 0, lastUpdated: Date.now() });
+    }
+    return userWinStreaks.get(userId)!;
+  }
+
+  function recordUserWin(userId: string, payout: number, bet: number) {
+    const profile = getUserProfile(userId);
+    profile.wins++;
+    profile.totalWon += (payout - bet);
+    profile.lastUpdated = Date.now();
+  }
+
+  function recordUserLoss(userId: string, bet: number) {
+    const profile = getUserProfile(userId);
+    profile.losses++;
+    profile.totalLost += bet;
+    profile.lastUpdated = Date.now();
+  }
+
+  function isHotPlayer(userId: string): boolean {
+    const profile = getUserProfile(userId);
+    // Hot player: won 2+ in a row AND total won > total lost
+    return profile.wins >= 2 && profile.totalWon > profile.totalLost;
+  }
+
+  // Layer 3: Dynamic personal crash point calculator
+  function calculatePersonalCrashPoint(
+    userId: string,
+    betAmount: number,
+    baseCrashPoint: number,
+    advancedSettings: any
+  ): number {
+    const whaleMin = parseFloat(advancedSettings?.whaleTargetMinMultiplier || '1.01');
+    const whaleMax = parseFloat(advancedSettings?.whaleTargetMaxMultiplier || '1.04');
+    const standardMax = parseFloat(advancedSettings?.standardLossMaxThreshold || '2.00');
+    const winProb = parseFloat(advancedSettings?.playerWinProbability || '40.00') / 100;
+
+    const isPanic = houseSessionTracker.isPanicMode;
+    const isUnderPressure = houseSessionTracker.isUnderPressure;
+    const hotPlayer = isHotPlayer(userId);
+
+    // Panic mode: NO one escapes, all crash between 1.01-1.5x
+    if (isPanic) {
+      const panicMax = betAmount >= 100 ? whaleMax : 1.50;
+      const crash = whaleMin + Math.random() * (panicMax - whaleMin);
+      console.log(`🚨 [PANIC] Player ${userId.slice(0,6)} forced crash at ${crash.toFixed(2)}x (house P&L: ${houseSessionTracker.houseProfit.toFixed(2)})`);
+      return Math.round(crash * 100) / 100;
+    }
+
+    // Reduce escape probability under pressure
+    const effectiveWinProb = isUnderPressure ? winProb * 0.5 : winProb;
+
+    // Hot players always get targeted regardless of bet size
+    if (hotPlayer || Math.random() >= effectiveWinProb) {
+      if (betAmount >= 100 || hotPlayer) {
+        // Whale or consistent winner → very tight range
+        const crash = whaleMin + Math.random() * (whaleMax - whaleMin);
+        console.log(`🎯 [TARGET] ${hotPlayer ? 'Hot player' : 'Whale'} ${userId.slice(0,6)} → ${crash.toFixed(2)}x`);
+        return Math.round(crash * 100) / 100;
+      } else {
+        // Standard player → crash between 1.01 and standardMax
+        const crash = 1.01 + Math.random() * (standardMax - 1.01);
+        return Math.round(crash * 100) / 100;
+      }
+    }
+
+    // Lucky escape → use base crash point (fair)
+    console.log(`✅ [ESCAPE] Player ${userId.slice(0,6)} gets fair crash at ${baseCrashPoint}x`);
+    return baseCrashPoint;
+  }
+
+
+
+  // Generate crash point following 20% house edge specification
+  // Formula: (1 - House Edge) / R
+  async function generateCrashPoint(): Promise<number> {
+    try {
+      const settings = await storage.getCrashSettings();
+      if (!settings) throw new Error("Settings not found");
+      const houseEdge = parseFloat(settings.houseEdge) / 100; // e.g., 0.20
+      const maxMultiplier = parseFloat(settings.maxMultiplier);
+      const minMultiplier = parseFloat(settings.minCrashMultiplier);
+
+      const R = Math.random();
+      // Formula: (1 - House Edge) / R
+      // If R is very small, multiplier becomes very large. We cap it at maxMultiplier.
+      let crashPoint = (1 - houseEdge) / R;
+      
+      // Enforce limits
+      crashPoint = Math.max(minMultiplier, Math.min(maxMultiplier, crashPoint));
+      
+      return Math.round(crashPoint * 100) / 100;
+    } catch (error) {
+      console.error('Error generating crash point from settings:', error);
+      // Fallback to default 20% house edge
+      const R = Math.random();
+      const crashPoint = Math.max(1.01, Math.min(50, (1 - 0.20) / R));
+      return Math.round(crashPoint * 100) / 100;
+    }
   }
 
   // Unified cash-out settlement function
   async function settleCrashCashout(userId: string, multiplier: number, betAmount: number): Promise<boolean> {
     try {
-      // Skip settlement for fake players
-      if (userId.startsWith('fake_')) {
-        return true; // Fake players don't need real settlement
-      }
+      if (userId.startsWith('fake_')) return true;
       
       const winAmount = betAmount * multiplier;
       
-      // Credit balance
-      await storage.atomicIncrementBalance(userId, winAmount.toString());
+      // Layer 1 + 2: Record payout
+      houseSessionTracker.recordPayout(winAmount);
+      recordUserWin(userId, winAmount, betAmount);
+      console.log(`💰 [SESSION] House P&L: ${houseSessionTracker.houseProfit.toFixed(2)} | Rate: ${houseSessionTracker.profitRate.toFixed(1)}% | Panic: ${houseSessionTracker.isPanicMode}`);
       
-      // Update bet status with proper settlement
+      await storage.atomicIncrementBalance(userId, winAmount.toString());
       const bet = await storage.getUserActiveCrashBet(userId, crashGameState.gameId!);
       if (bet) {
         await storage.updateBetStatus(bet.id, 'cashed_out', winAmount.toString());
       }
-      
       return true;
     } catch (error) {
       console.error(`Error settling cash-out for user ${userId}:`, error);
@@ -15429,21 +15852,68 @@ export async function registerRoutes(app: Express): Promise<{ httpServer: Server
   }
 
   async function startCrashGame() {
-    const crashPoint = generateCrashPoint();
+    const crashPoint = await generateCrashPoint();
+    let globalCrashPoint = crashPoint;
     const gameId = crashGameState.gameId || `crash_${Date.now()}`;
-    
-    console.log(`🚀 Starting crash game ${gameId}, will crash at ${crashPoint}x`);
     
     // Only keep real players and any fake players that joined during waiting
     const allPlayers = crashGameState.players.map(p => ({ ...p, cashedOut: false }));
+    const realPlayers = allPlayers.filter(p => !p.userId.startsWith('fake_'));
+    
+    // Setup personalized targets
+    const advancedSettings = await storage.getAdvancedCrashSettings();
+    crashGameState.personalStates = new Map();
+    
+    if (advancedSettings?.deepThinkingEnabled) {
+      if (realPlayers.length === 0) {
+        // Bait mode — inflate crash point to attract next round bets
+        const minBait = parseFloat(advancedSettings.noBetBaitMinMultiplier || '7.00');
+        const maxBait = parseFloat(advancedSettings.noBetBaitMaxMultiplier || '20.00');
+        globalCrashPoint = minBait + Math.random() * (maxBait - minBait);
+        globalCrashPoint = Math.round(globalCrashPoint * 100) / 100;
+        console.log(`🎣 Bait Mode active. Global crash → ${globalCrashPoint}x`);
+      } else {
+        // Layer 3: Use advanced calculator per player
+        let maxPersonal = 1.00;
+        for (const player of realPlayers) {
+          houseSessionTracker.recordBet(player.bet); // Layer 1: track wagered
+          const personalCrash = calculatePersonalCrashPoint(
+            player.userId,
+            player.bet,
+            crashPoint,
+            advancedSettings
+          );
+          if (personalCrash > maxPersonal) maxPersonal = personalCrash;
+          crashGameState.personalStates.set(player.userId, {
+            crashPoint: personalCrash,
+            hasCrashed: false,
+            crashedAtMultiplier: 1.00
+          });
+        }
+        globalCrashPoint = Math.max(crashPoint, maxPersonal);
+      }
+    } else {
+      // Deep Thinking OFF — but still track session bets for reporting
+      for (const player of realPlayers) {
+        houseSessionTracker.recordBet(player.bet);
+        crashGameState.personalStates.set(player.userId, {
+          crashPoint: globalCrashPoint,
+          hasCrashed: false,
+          crashedAtMultiplier: 1.00
+        });
+      }
+    }
+
+    console.log(`🚀 Starting crash game ${gameId}, global physical crash at ${globalCrashPoint}x`);
     
     crashGameState = {
       phase: 'flying',
       multiplier: 1.00,
-      crashPoint,
+      globalCrashPoint,
       startTime: Date.now(),
       gameId,
       players: allPlayers,
+      personalStates: crashGameState.personalStates,
     };
 
     // Create game in database
@@ -15454,17 +15924,14 @@ export async function registerRoutes(app: Express): Promise<{ httpServer: Server
         roundDuration: 0,
         startTime: new Date(),
         endTime: new Date(Date.now() + 60000),
-        crashPoint: crashPoint.toString(),
+        crashPoint: globalCrashPoint.toString(),
       });
     } catch (error) {
       console.error('Error creating crash game in database:', error);
     }
 
-    // Broadcast game started (with sanitized state - only fake players)
-    broadcastToClients({
-      type: 'crashGameStarted',
-      state: getSanitizedCrashStateToBroadcast(),
-    });
+    // Broadcast game started
+    broadcastPersonalizedCrashUpdates('crashGameStarted');
 
     // Serialized game loop - processes multiplier updates and auto cash-outs
     const gameLoop = async () => {
@@ -15493,17 +15960,31 @@ export async function registerRoutes(app: Express): Promise<{ httpServer: Server
         }
       }
 
-      // Check if we've reached crash point
-      if (crashGameState.multiplier >= crashPoint) {
+      // Process individual crashes
+      const currentRealPlayers = crashGameState.players.filter(p => !p.userId.startsWith('fake_'));
+      for (const player of currentRealPlayers) {
+        const pState = crashGameState.personalStates.get(player.userId);
+        if (pState && !pState.hasCrashed && crashGameState.multiplier >= pState.crashPoint) {
+          pState.hasCrashed = true;
+          pState.crashedAtMultiplier = crashGameState.multiplier;
+          
+          // They lose, unless they already cashed out
+          if (!player.cashedOut) {
+            storage.getUserActiveCrashBet(player.userId, crashGameState.gameId!).then(bet => {
+              if (bet) storage.updateBetStatus(bet.id, 'lost', '0');
+            }).catch(e => console.error(e));
+          }
+        }
+      }
+
+      // Check if we've reached global crash point
+      if (crashGameState.multiplier >= (crashGameState.globalCrashPoint || 1.00)) {
         crashCrashGame();
         return;
       }
 
-      // Broadcast updated state (sanitized - only fake players)
-      broadcastToClients({
-        type: 'crashGameUpdate',
-        state: getSanitizedCrashStateToBroadcast(),
-      });
+      // Broadcast updated personalized states
+      broadcastPersonalizedCrashUpdates('crashGameUpdate');
 
       // Schedule next iteration
       if (crashGameState.phase === 'flying') {
@@ -15516,40 +15997,44 @@ export async function registerRoutes(app: Express): Promise<{ httpServer: Server
   }
 
   async function crashCrashGame() {
-    // No need to clear interval since we're using setTimeout loop
-    
-    console.log(`💥 Crash game crashed at ${crashGameState.multiplier}x`);
+    console.log(`💥 Crash game crashed at global ${crashGameState.multiplier}x`);
     
     crashGameState.phase = 'crashed';
     
     // Add to history (keep last 15)
-    if (crashGameState.crashPoint) {
-      crashGameHistory.unshift(crashGameState.crashPoint);
+    if (crashGameState.globalCrashPoint) {
+      crashGameHistory.unshift(crashGameState.globalCrashPoint);
       if (crashGameHistory.length > 15) {
         crashGameHistory = crashGameHistory.slice(0, 15);
       }
     }
     
-    // Process all uncashed out bets as losses (skip fake players)
+    // Layer 1: Record round + per-user losses
+    houseSessionTracker.recordRound();
     for (const player of crashGameState.players) {
-      if (!player.cashedOut && !player.userId.startsWith('fake_')) {
-        try {
-          const bet = await storage.getUserActiveCrashBet(player.userId, crashGameState.gameId!);
-          if (bet) {
-            await storage.updateBetStatus(bet.id, 'lost', '0');
+      if (!player.userId.startsWith('fake_')) {
+        recordUserLoss(player.userId, player.bet);
+        const pState = crashGameState.personalStates.get(player.userId);
+        if (!pState || !pState.hasCrashed) {
+          try {
+            const bet = await storage.getUserActiveCrashBet(player.userId, crashGameState.gameId!);
+            if (bet) await storage.updateBetStatus(bet.id, 'lost', '0');
+          } catch (error) {
+            console.error(`Error processing crash bet for user ${player.userId}:`, error);
           }
-        } catch (error) {
-          console.error(`Error processing crash bet for user ${player.userId}:`, error);
         }
+        // Auto-cleanup old bet history (limit to 100)
+        storage.cleanupUserBetHistory(player.userId).catch(e => console.error(`Error cleaning up history for ${player.userId}:`, e));
       }
     }
+    console.log(`📊 [SESSION] Round ${houseSessionTracker.roundCount} done. House P&L: ${houseSessionTracker.houseProfit.toFixed(2)} | Rate: ${houseSessionTracker.profitRate.toFixed(1)}% | Panic: ${houseSessionTracker.isPanicMode} | Pressure: ${houseSessionTracker.isUnderPressure}`);
 
     // Update game in database
     try {
       if (crashGameState.gameId) {
         await storage.updateGameResult(
           crashGameState.gameId,
-          Math.floor(crashGameState.crashPoint || 1),
+          Math.floor(crashGameState.globalCrashPoint || 1),
           'red',
           'small'
         );
@@ -15558,10 +16043,7 @@ export async function registerRoutes(app: Express): Promise<{ httpServer: Server
       console.error('Error updating crash game result:', error);
     }
 
-    broadcastToClients({
-      type: 'crashGameCrashed',
-      state: getSanitizedCrashStateToBroadcast(),
-    });
+    broadcastPersonalizedCrashUpdates('crashGameCrashed');
 
     // Reset after 5 seconds
     crashGameTimer = setTimeout(() => {
@@ -15576,12 +16058,10 @@ export async function registerRoutes(app: Express): Promise<{ httpServer: Server
         players: [], // Fresh start with no players
         startTime: nextStartTime,
         gameId,
+        personalStates: new Map()
       };
       
-      broadcastToClients({
-        type: 'crashGameWaiting',
-        state: getSanitizedCrashStateToBroadcast(),
-      });
+      broadcastPersonalizedCrashUpdates('crashGameWaiting');
 
       // Gradually add fake players over the 7 seconds waiting time
       const numFakePlayers = Math.floor(Math.random() * 8) + 8; // 8-15 bots
@@ -15616,10 +16096,7 @@ export async function registerRoutes(app: Express): Promise<{ httpServer: Server
         
         addedFakePlayers++;
         
-        broadcastToClients({
-          type: 'crashGameUpdate',
-          state: getSanitizedCrashStateToBroadcast(),
-        });
+        broadcastPersonalizedCrashUpdates('crashGameUpdate');
       }, intervalDelay);
 
       // Start new game after wait time
@@ -15631,6 +16108,28 @@ export async function registerRoutes(app: Express): Promise<{ httpServer: Server
   }
 
   // Crash game routes
+  app.get('/api/crash/my-bet', requireAuth, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId!;
+      const player = crashGameState.players.find(p => p.userId === userId);
+      
+      if (!player) {
+        return res.json({ hasBet: false });
+      }
+
+      res.json({
+        hasBet: true,
+        amount: player.bet,
+        cashedOut: player.cashedOut,
+        multiplier: player.cashoutMultiplier || 0,
+        autoCashout: player.autoCashout
+      });
+    } catch (error) {
+      console.error('Error fetching my crash bet:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
   app.get('/api/crash/state', requireAuth, async (req, res) => {
     // Check if crash game is enabled (maintenance mode check)
     const crashEnabledSetting = await storage.getSystemSetting('crash_enabled');
@@ -15670,8 +16169,8 @@ export async function registerRoutes(app: Express): Promise<{ httpServer: Server
     };
     
     // Never expose crashPoint until game ends
-    if (crashGameState.phase === 'crashed' && crashGameState.crashPoint) {
-      sanitizedState.crashPoint = crashGameState.crashPoint;
+    if (crashGameState.phase === 'crashed' && crashGameState.globalCrashPoint) {
+      sanitizedState.crashPoint = crashGameState.globalCrashPoint;
     }
     
     res.json(sanitizedState);
@@ -15704,6 +16203,24 @@ export async function registerRoutes(app: Express): Promise<{ httpServer: Server
       if (!amount || amount <= 0) {
         return res.status(400).json({ message: 'Invalid bet amount' });
       }
+
+      // Read bet limits from DB (stored in coins) — convert to USD for comparison
+      // because frontend sends goldCoinsToUsd(betAmount) i.e. coins/100
+      const betLimits = await storage.getCrashSettings();
+      const minBetCoins = betLimits ? parseFloat(betLimits.minBetAmount || '50') : 50;
+      const maxBetCoins = betLimits ? parseFloat(betLimits.maxBetAmount || '10000') : 10000;
+      const minBetUsd = minBetCoins / 100;
+      const maxBetUsd = maxBetCoins / 100;
+
+      if (amount < minBetUsd) {
+        return res.status(400).json({ message: `Minimum bet is ${minBetCoins} coins` });
+      }
+      if (amount > maxBetUsd) {
+        return res.status(400).json({ message: `Maximum bet is ${maxBetCoins.toLocaleString()} coins` });
+      }
+
+
+
 
       if (crashGameState.phase !== 'waiting') {
         return res.status(400).json({ message: 'Cannot place bet while game is in progress' });
@@ -15752,10 +16269,7 @@ export async function registerRoutes(app: Express): Promise<{ httpServer: Server
         });
       }
 
-      broadcastToClients({
-        type: 'crashGameUpdate',
-        state: getSanitizedCrashStateToBroadcast(),
-      });
+      broadcastPersonalizedCrashUpdates('crashGameUpdate');
 
       res.json({ success: true });
     } catch (error) {
@@ -15801,10 +16315,7 @@ export async function registerRoutes(app: Express): Promise<{ httpServer: Server
 
       const winAmount = player.bet * crashGameState.multiplier;
 
-      broadcastToClients({
-        type: 'crashGameUpdate',
-        state: getSanitizedCrashStateToBroadcast(),
-      });
+      broadcastPersonalizedCrashUpdates('crashGameUpdate');
 
       res.json({ 
         success: true, 

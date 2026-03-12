@@ -129,14 +129,20 @@ import {
   bettingTasks,
   userBettingTaskProgress,
   whitelistedIps,
-  telegramScheduledPosts
+  telegramScheduledPosts,
+  crashSettings,
+  type CrashSetting,
+  type InsertCrashSetting,
+  advancedCrashSettings,
+  type AdvancedCrashSetting,
+  type InsertAdvancedCrashSetting
 } from "@shared/schema";
 import { VipService } from "./vip-service";
 import { randomUUID } from "crypto";
 import * as bcrypt from "bcrypt";
 import { authenticator } from "otplib";
 import { db } from "./db";
-import { eq, desc, asc, count, sum, sql, and, not, like, type ExtractTablesWithRelations } from "drizzle-orm";
+import { eq, desc, asc, count, sum, sql, and, not, like, inArray, type ExtractTablesWithRelations } from "drizzle-orm";
 import type { PgTransaction } from 'drizzle-orm/pg-core';
 import type { NeonHttpQueryResultHKT } from 'drizzle-orm/neon-http';
 import { realtimeSyncService } from "./realtime-sync-service";
@@ -283,6 +289,7 @@ export interface IStorage {
   updateBetForCashout(betId: string, cashOutMultiplier: string, cashedOutAt: Date): Promise<Bet | undefined>;
   updateBetIfPending(betId: string, newStatus: "won" | "lost" | "cashed_out", additionalUpdates?: Partial<Bet>): Promise<boolean>;
   getUserActiveCrashBet(userId: string, gameId: string): Promise<Bet | undefined>;
+  cleanupUserBetHistory(userId: string): Promise<void>;
 
   // Referral methods
   createReferral(referral: InsertReferral): Promise<Referral>;
@@ -380,6 +387,12 @@ export interface IStorage {
   createVipSetting(setting: InsertVipSetting): Promise<VipSetting>;
   updateVipSetting(id: string, updates: Partial<VipSetting>): Promise<VipSetting | undefined>;
   deleteVipSetting(id: string): Promise<boolean>;
+
+  // Crash Settings methods
+  getCrashSettings(): Promise<CrashSetting | undefined>;
+  updateCrashSettings(updates: any): Promise<CrashSetting | undefined>;
+  getAdvancedCrashSettings(): Promise<AdvancedCrashSetting | undefined>;
+  updateAdvancedCrashSettings(updates: any): Promise<AdvancedCrashSetting | undefined>;
 
   // Notification methods
   createNotification(notification: InsertNotification): Promise<Notification>;
@@ -857,7 +870,34 @@ export class DatabaseStorage implements IStorage {
         }
       }
 
-      // Initialize VIP settings
+      // Initialize default crash settings
+      const [existingCrashSettings] = await db.select().from(crashSettings).limit(1);
+      if (!existingCrashSettings) {
+        await db.insert(crashSettings).values({
+          houseEdge: "20.00",
+          maxMultiplier: "50.00",
+          minCrashMultiplier: "1.01",
+          crashEnabled: true,
+          updatedBy: 'system',
+        } as any);
+        console.log('✅ Default crash settings initialized');
+      }
+
+      // Initialize default advanced crash settings
+      const [existingAdvancedCrashSettings] = await db.select().from(advancedCrashSettings).limit(1);
+      if (!existingAdvancedCrashSettings) {
+        await db.insert(advancedCrashSettings).values({
+          deepThinkingEnabled: false,
+          noBetBaitMinMultiplier: "7.00",
+          noBetBaitMaxMultiplier: "20.00",
+          whaleTargetMinMultiplier: "1.01",
+          whaleTargetMaxMultiplier: "1.04",
+          standardLossMaxThreshold: "2.00",
+          playerWinProbability: "40.00",
+          updatedBy: 'system',
+        } as any);
+        console.log('✅ Default advanced crash settings initialized');
+      }      // Initialize VIP settings
       const vipLevels = [
         { 
           key: 'lv1', order: 1, displayName: 'Level 1', teamRequirement: 0, depositRequirement: 0,
@@ -956,6 +996,9 @@ export class DatabaseStorage implements IStorage {
         }
       }
       console.log('✅ Default VIP Telegram links initialized');
+
+
+      
     } catch (error) {
       console.error('Error initializing default data:', error);
     }
@@ -2515,6 +2558,42 @@ export class DatabaseStorage implements IStorage {
       .limit(100);
   }
 
+  // Crash Settings methods
+  async getCrashSettings(): Promise<CrashSetting | undefined> {
+    const [settings] = await db.select().from(crashSettings).limit(1);
+    return settings || undefined;
+  }
+
+  async updateCrashSettings(updates: Partial<CrashSetting>): Promise<CrashSetting | undefined> {
+    const [existing] = await db.select().from(crashSettings).limit(1);
+    
+    if (existing) {
+      const [updated] = await db
+        .update(crashSettings)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(crashSettings.id, existing.id))
+        .returning();
+      return updated;
+    }
+    
+    const id = randomUUID();
+    const [newSettings] = await db
+      .insert(crashSettings)
+      .values({
+        id,
+        houseEdge: updates.houseEdge ?? "20.00",
+        maxMultiplier: updates.maxMultiplier ?? "50.00",
+        minCrashMultiplier: updates.minCrashMultiplier ?? "1.01",
+        crashEnabled: updates.crashEnabled ?? true,
+        updatedBy: updates.updatedBy ?? 'system',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+      
+    return newSettings;
+  }
+
   // Admin action methods
   async logAdminAction(action: InsertAdminAction): Promise<AdminAction> {
     const [newAction] = await db
@@ -4063,12 +4142,45 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserActiveCrashBet(userId: string, gameId: string): Promise<Bet | undefined> {
-    const [bet] = await db
-      .select()
-      .from(bets)
-      .where(sql`${bets.userId} = ${userId} AND ${bets.gameId} = ${gameId} AND ${bets.betType} = 'crash' AND ${bets.status} = 'pending'`)
-      .limit(1);
-    return bet;
+    try {
+      const [userBet] = await db
+        .select()
+        .from(bets)
+        .where(
+          and(
+            eq(bets.userId, userId),
+            eq(bets.gameId, gameId),
+            eq(bets.betType, 'crash'),
+            eq(bets.status, 'pending')
+          )
+        )
+        .limit(1);
+      return userBet;
+    } catch (error) {
+      console.error('Error fetching user active crash bet:', error);
+      return undefined;
+    }
+  }
+
+  async cleanupUserBetHistory(userId: string): Promise<void> {
+    try {
+      // Find all crash bets for the user, ordered by creation time descending
+      const userBets = await db.select({ id: bets.id })
+        .from(bets)
+        .where(and(eq(bets.userId, userId), eq(bets.betType, 'crash')))
+        .orderBy(desc(bets.createdAt));
+
+      if (userBets.length > 100) {
+        const idsToDelete = userBets.slice(100).map(b => b.id);
+        
+        await db.delete(bets)
+          .where(inArray(bets.id, idsToDelete));
+        
+        console.log(`🧹 [CLEANUP] Removed ${idsToDelete.length} old crash bets for user ${userId}`);
+      }
+    } catch (error) {
+      console.error(`❌ [CLEANUP] Error cleaning up bet history for user ${userId}:`, error);
+    }
   }
 
   // Golden Live methods
@@ -5271,6 +5383,46 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return result[0];
   }
+
+
+  // Advanced Personalized Crash Settings
+  async getAdvancedCrashSettings(): Promise<AdvancedCrashSetting | undefined> {
+    const [settings] = await db.select().from(advancedCrashSettings).limit(1);
+    return settings || undefined;
+  }
+
+  async updateAdvancedCrashSettings(updates: Partial<AdvancedCrashSetting>): Promise<AdvancedCrashSetting | undefined> {
+    const [existing] = await db.select().from(advancedCrashSettings).limit(1);
+    
+    if (existing) {
+      const [updated] = await db
+        .update(advancedCrashSettings)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(advancedCrashSettings.id, existing.id))
+        .returning();
+      return updated;
+    }
+    
+    const id = randomUUID();
+    const [newSettings] = await db
+      .insert(advancedCrashSettings)
+      .values({
+        id,
+        deepThinkingEnabled: updates.deepThinkingEnabled ?? true,
+        whaleTargetMinMultiplier: updates.whaleTargetMinMultiplier ?? "1.01",
+        whaleTargetMaxMultiplier: updates.whaleTargetMaxMultiplier ?? "1.04",
+        noBetBaitMinMultiplier: updates.noBetBaitMinMultiplier ?? "7.00",
+        noBetBaitMaxMultiplier: updates.noBetBaitMaxMultiplier ?? "20.00",
+        standardLossMaxThreshold: updates.standardLossMaxThreshold ?? "2.00",
+        playerWinProbability: updates.playerWinProbability ?? "40.00",
+        updatedBy: updates.updatedBy ?? 'system',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+      
+    return newSettings;
+  }
 }
 
 // Simple in-memory storage implementation
@@ -5305,6 +5457,9 @@ export class MemStorage implements IStorage {
   private quickReplies = new Map<string, QuickReply>();
   private telegramLoginSessions = new Map<string, { userId?: string; expiresAt: Date }>();
   private depositRequests = new Map<string, DepositRequest>();
+  private crashSettings = new Map<string, CrashSetting>();
+  private advancedCrashSettings = new Map<string, AdvancedCrashSetting>();
+  private telegramScheduledPostsMap = new Map<string, TelegramScheduledPost>();
   private nextUserId = 1;
   private nextGameId = 1;
   private nextBetId = 1;
@@ -5336,6 +5491,8 @@ export class MemStorage implements IStorage {
     this.initializeVipSettings();
     this.initializationPromise = this.initializeDefaultData().then(() => {
       this.initializeTrafficData();
+      this.initializeCrashSettings();
+      this.initializeAdvancedCrashSettings();
     });
   }
 
@@ -5783,6 +5940,42 @@ export class MemStorage implements IStorage {
     
     this.users.set(userId, user);
     return user;
+  }
+
+  // Crash settings
+  async initializeCrashSettings() {
+    if (this.crashSettings.size === 0) {
+      const id = randomUUID();
+      this.crashSettings.set(id, {
+        id,
+        houseEdge: "20.00",
+        maxMultiplier: "50.00",
+        minCrashMultiplier: "1.01",
+        crashEnabled: true,
+        updatedBy: 'system',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+    }
+  }
+
+  async initializeAdvancedCrashSettings() {
+    if (this.advancedCrashSettings.size === 0) {
+      const id = randomUUID();
+      this.advancedCrashSettings.set(id, {
+        id,
+        deepThinkingEnabled: false,
+        noBetBaitMinMultiplier: "7.00",
+        noBetBaitMaxMultiplier: "20.00",
+        whaleTargetMinMultiplier: "1.01",
+        whaleTargetMaxMultiplier: "1.04",
+        standardLossMaxThreshold: "2.00",
+        playerWinProbability: "40.00",
+        updatedBy: 'system',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+    }
   }
 
   async clearTelegramLinkToken(userId: string): Promise<User | undefined> {
@@ -6472,6 +6665,18 @@ export class MemStorage implements IStorage {
       bet.status === 'pending'
     );
     return userBets[0]; // Return first active crash bet for this user/game
+  }
+
+  async cleanupUserBetHistory(userId: string): Promise<void> {
+    const userBets = Array.from(this.bets.values())
+      .filter(bet => bet.userId === userId && bet.betType === 'crash')
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+    if (userBets.length > 100) {
+      const toDelete = userBets.slice(100);
+      toDelete.forEach(bet => this.bets.delete(bet.id));
+      console.log(`🧹 [MEM-CLEANUP] Removed ${toDelete.length} old crash bets for user ${userId}`);
+    }
   }
 
   // Stub implementations for remaining methods
@@ -9159,8 +9364,6 @@ export class MemStorage implements IStorage {
   }
 
   // Telegram Scheduled Posts stub methods
-  private telegramScheduledPostsMap = new Map<string, TelegramScheduledPost>();
-
   async createTelegramScheduledPost(post: InsertTelegramScheduledPost): Promise<TelegramScheduledPost> {
     const id = randomUUID();
     const scheduledPost: TelegramScheduledPost = {
@@ -9230,6 +9433,49 @@ export class MemStorage implements IStorage {
       status: repeatDaily ? existing.status : 'completed'
     };
     this.telegramScheduledPostsMap.set(id, updated);
+    return updated;
+  }
+
+
+
+  // Crash Settings methods
+  async getCrashSettings(): Promise<CrashSetting | undefined> {
+    const settings = Array.from(this.crashSettings.values());
+    if (settings.length > 0) return settings[0];
+    return undefined;
+  }
+
+  async updateCrashSettings(updates: any): Promise<CrashSetting | undefined> {
+    const existing = await this.getCrashSettings();
+    if (!existing) return undefined;
+
+    const updated = {
+      ...existing,
+      ...updates,
+      minCrashMultiplier: updates.minMultiplier || updates.minCrashMultiplier || existing.minCrashMultiplier,
+      updatedAt: new Date()
+    };
+    this.crashSettings.set(existing.id, updated);
+    return updated;
+  }
+
+  // Advanced Personalized Crash Settings
+  async getAdvancedCrashSettings(): Promise<AdvancedCrashSetting | undefined> {
+    const settings = Array.from(this.advancedCrashSettings.values());
+    if (settings.length > 0) return settings[0];
+    return undefined;
+  }
+
+  async updateAdvancedCrashSettings(updates: any): Promise<AdvancedCrashSetting | undefined> {
+    const existing = await this.getAdvancedCrashSettings();
+    if (!existing) return undefined;
+
+    const updated = {
+      ...existing,
+      ...updates,
+      updatedAt: new Date()
+    };
+    this.advancedCrashSettings.set(existing.id, updated);
     return updated;
   }
 }
