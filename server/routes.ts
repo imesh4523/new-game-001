@@ -15238,12 +15238,12 @@ export async function registerRoutes(app: Express): Promise<{ httpServer: Server
         totalGames,
         totalBets,
         totalWins,
-        totalHouseProfit: houseProfit.toFixed(2),
-        totalWagered: totalWagered.toFixed(2),
-        totalPayout,
+        totalHouseProfit: (houseProfit * 100).toFixed(2),
+        totalWagered: (totalWagered * 100).toFixed(2),
+        totalPayout: (winPayout * 100).toFixed(2),
         winRate,
-        expectedProfit,
-        breakEvenNeeded,
+        expectedProfit: (totalWagered * 0.20 * 100).toFixed(2),
+        breakEvenNeeded: houseProfit < 0 ? ((Math.abs(houseProfit) / 0.20) * 100).toFixed(2) : '0.00',
       });
     } catch (error: any) {
       console.error('Crash stats error:', error.message);
@@ -15270,8 +15270,8 @@ export async function registerRoutes(app: Express): Promise<{ httpServer: Server
 
       let totalWagered = 0, totalPayout = 0;
       const games = r.rows.map((row: any) => {
-        const wagered = parseFloat(row.total_wagered);
-        const payout = parseFloat(row.total_payout);
+        const wagered = parseFloat(row.total_wagered) * 100;
+        const payout = parseFloat(row.total_payout) * 100;
         const profit = wagered - payout;
         totalWagered += wagered;
         totalPayout += payout;
@@ -15323,8 +15323,8 @@ export async function registerRoutes(app: Express): Promise<{ httpServer: Server
       `);
 
       const players = r.rows.map((row: any) => {
-        const wagered = parseFloat(row.total_wagered);
-        const payout = parseFloat(row.total_payout);
+        const wagered = parseFloat(row.total_wagered) * 100;
+        const payout = parseFloat(row.total_payout) * 100;
         const houseProfit = wagered - payout;
         const wins = parseInt(row.wins);
         const losses = parseInt(row.losses);
