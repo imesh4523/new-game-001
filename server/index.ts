@@ -153,6 +153,10 @@ app.use(mongoSanitize({
   }
 }));
 
+// Simple health check endpoints (must be before advanced security middlewares that might block them)
+app.get('/health', (_req, res) => res.status(200).send('OK'));
+app.get('/api/health', (_req, res) => res.status(200).send('OK'));
+
 // Security: Cloudflare-specific protections (WAF Integration)
 // Skip security checks for WebSocket upgrade requests
 const skipForWebSocket = (middleware: any) => (req: Request, res: Response, next: NextFunction) => {
@@ -442,7 +446,7 @@ app.use(async (req, res, next) => {
   const port = parseInt(process.env.PORT || (isProduction ? '8080' : '5000'), 10);
   server.listen({
     port,
-    host: "127.0.0.1",
+    host: "0.0.0.0",
   }, async () => {
     log(`serving on port ${port}`);
 
