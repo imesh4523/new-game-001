@@ -731,17 +731,17 @@ export const updatePasskeySchema = z.object({
   isActive: z.boolean().optional(),
 });
 
-export const insertPasskeySchema = createInsertSchema(passkeys).omit({
-  id: true,
-  lastUsedAt: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertPasskeySchema = createInsertSchema(passkeys, {
+  id: z.string().optional(),
+  lastUsedAt: z.date().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
 });
 
-export const insertNotificationSchema = createInsertSchema(notifications).omit({
-  id: true,
-  isRead: true,
-  createdAt: true,
+export const insertNotificationSchema = createInsertSchema(notifications, {
+  id: z.string().optional(),
+  isRead: z.boolean().optional(),
+  createdAt: z.date().optional(),
 });
 
 export const sendNotificationSchema = z.object({
@@ -759,10 +759,10 @@ export const markNotificationReadSchema = z.object({
 });
 
 // Push subscription schemas
-export const insertPushSubscriptionSchema = createInsertSchema(pushSubscriptions).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertPushSubscriptionSchema = createInsertSchema(pushSubscriptions, {
+  id: z.string().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
 });
 
 export const subscribeToPushSchema = z.object({
@@ -778,11 +778,11 @@ export const unsubscribeFromPushSchema = z.object({
 });
 
 // Promo code schemas
-export const insertPromoCodeSchema = createInsertSchema(promoCodes).omit({
-  id: true,
-  usedCount: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertPromoCodeSchema = createInsertSchema(promoCodes, {
+  id: z.string().optional(),
+  usedCount: z.number().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
 });
 
 export const createPromoCodeSchema = z.object({
@@ -829,16 +829,9 @@ export const redeemPromoCodeSchema = z.object({
   code: z.string().min(1, "Promo code is required"),
 });
 
-export const insertPromoCodeRedemptionSchema = createInsertSchema(promoCodeRedemptions).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertPromoCodeRedemptionSchema = createInsertSchema(promoCodeRedemptions);
 
-export const insertVipLevelTelegramLinkSchema = createInsertSchema(vipLevelTelegramLinks).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertVipLevelTelegramLinkSchema = createInsertSchema(vipLevelTelegramLinks);
 
 export const upsertVipLevelTelegramLinkSchema = z.object({
   vipLevel: z.enum(["lv1", "lv2", "vip", "vip1", "vip2", "vip3", "vip4", "vip5", "vip6", "vip7"]),
@@ -847,37 +840,22 @@ export const upsertVipLevelTelegramLinkSchema = z.object({
   isActive: z.boolean().default(true),
 });
 
-export const insertGameSchema = createInsertSchema(games).omit({
-  id: true,
-  result: true,
-  resultColor: true,
-  resultSize: true,
-  totalBetsAmount: true,
-  totalPayouts: true,
-  houseProfit: true,
-  createdAt: true,
-});
+export const insertGameSchema = createInsertSchema(games);
 
-export const insertBetSchema = createInsertSchema(bets).omit({
-  id: true,
-  createdAt: true,
-  status: true,
-  potential: true,
-  actualPayout: true,
-});
+export const insertBetSchema = createInsertSchema(bets);
 
 // Crash game specific schemas
-export const insertCrashGameSchema = createInsertSchema(games).omit({
-  id: true,
-  result: true,
-  resultColor: true,
-  resultSize: true,
-  currentMultiplier: true,
-  crashedAt: true,
-  totalBetsAmount: true,
-  totalPayouts: true,
-  houseProfit: true,
-  createdAt: true,
+export const insertCrashGameSchema = createInsertSchema(games, {
+  id: z.string().optional(),
+  result: z.number().optional(),
+  resultColor: z.string().optional(),
+  resultSize: z.string().optional(),
+  currentMultiplier: z.string().optional(),
+  crashedAt: z.date().optional(),
+  totalBetsAmount: z.string().optional(),
+  totalPayouts: z.string().optional(),
+  houseProfit: z.string().optional(),
+  createdAt: z.date().optional(),
 }).extend({
   gameType: z.literal("crash"),
   crashPoint: z.string().refine((val) => {
@@ -888,13 +866,13 @@ export const insertCrashGameSchema = createInsertSchema(games).omit({
   }),
 });
 
-export const insertCrashBetSchema = createInsertSchema(bets).omit({
-  id: true,
-  createdAt: true,
-  status: true,
-  potential: true,
-  cashOutMultiplier: true,
-  cashedOutAt: true,
+export const insertCrashBetSchema = createInsertSchema(bets, {
+  id: z.string().optional(),
+  createdAt: z.date().optional(),
+  status: z.string().optional(),
+  potential: z.string().optional(),
+  cashOutMultiplier: z.string().optional(),
+  cashedOutAt: z.date().optional(),
 }).extend({
   betType: z.literal("crash"),
   betValue: z.literal("crash"),
@@ -907,58 +885,23 @@ export const insertCrashBetSchema = createInsertSchema(bets).omit({
   }),
 });
 
-export const insertTransactionSchema = createInsertSchema(transactions).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertTransactionSchema = createInsertSchema(transactions);
 
-export const insertDepositRequestSchema = createInsertSchema(depositRequests).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertDepositRequestSchema = createInsertSchema(depositRequests);
 
-export const insertReferralSchema = createInsertSchema(referrals).omit({
-  id: true,
-  totalCommission: true,
-  createdAt: true,
-});
+export const insertReferralSchema = createInsertSchema(referrals);
 
-export const insertAdminActionSchema = createInsertSchema(adminActions).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertAdminActionSchema = createInsertSchema(adminActions);
 
-export const insertGameAnalyticsSchema = createInsertSchema(gameAnalytics).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertGameAnalyticsSchema = createInsertSchema(gameAnalytics);
 
-export const insertUserSessionSchema = createInsertSchema(userSessions).omit({
-  id: true,
-  loginTime: true,
-});
+export const insertUserSessionSchema = createInsertSchema(userSessions);
 
-export const insertSupportChatSessionSchema = createInsertSchema(supportChatSessions).omit({
-  id: true,
-  lastMessageAt: true,
-  createdAt: true,
-  closedAt: true,
-});
+export const insertSupportChatSessionSchema = createInsertSchema(supportChatSessions);
 
-export const insertSupportChatMessageSchema = createInsertSchema(supportChatMessages).omit({
-  id: true,
-  deliveredAt: true,
-  createdAt: true,
-});
+export const insertSupportChatMessageSchema = createInsertSchema(supportChatMessages);
 
-export const insertQuickReplySchema = createInsertSchema(quickReplies).omit({
-  id: true,
-  createdBy: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertQuickReplySchema = createInsertSchema(quickReplies).extend({
   shortcut: z.string().min(1, "Shortcut is required").max(50, "Shortcut too long"),
   message: z.string().min(1, "Message is required").max(1000, "Message too long"),
 });
@@ -970,39 +913,15 @@ export const updateQuickReplySchema = z.object({
   message: "At least one field (shortcut or message) must be provided",
 });
 
-export const insertPageViewSchema = createInsertSchema(pageViews).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertPageViewSchema = createInsertSchema(pageViews);
 
-export const insertTelegramLoginSessionSchema = createInsertSchema(telegramLoginSessions).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertTelegramLoginSessionSchema = createInsertSchema(telegramLoginSessions);
 
-export const insertWithdrawalRequestSchema = createInsertSchema(withdrawalRequests).omit({
-  id: true,
-  status: true,
-  processedAt: true,
-  processedBy: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertWithdrawalRequestSchema = createInsertSchema(withdrawalRequests);
 
-export const insertSystemSettingSchema = createInsertSchema(systemSettings).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertSystemSettingSchema = createInsertSchema(systemSettings);
 
-export const insertWhitelistedIpSchema = createInsertSchema(whitelistedIps).omit({
-  id: true,
-  currentAccountCount: true,
-  exceededThreshold: true,
-  thresholdExceededAt: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertWhitelistedIpSchema = createInsertSchema(whitelistedIps);
 
 export const updateWhitelistedIpSchema = z.object({
   id: z.string().min(1, "Whitelisted IP ID is required"),
@@ -1010,12 +929,7 @@ export const updateWhitelistedIpSchema = z.object({
   whitelistedReason: z.string().optional(),
 });
 
-export const insertTelegramAutoJoinChannelSchema = createInsertSchema(telegramAutoJoinChannels).omit({
-  id: true,
-  lastLinkRefreshAt: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertTelegramAutoJoinChannelSchema = createInsertSchema(telegramAutoJoinChannels).extend({
   chatId: z.string().min(1, "Chat ID is required"),
   channelName: z.string().min(1, "Channel name is required").max(200, "Channel name too long"),
   inviteLink: z.string().url("Invalid invite link format"),
@@ -1032,31 +946,13 @@ export const updateTelegramAutoJoinChannelSchema = z.object({
   message: "At least one field must be provided",
 });
 
-export const insertDatabaseConnectionSchema = createInsertSchema(databaseConnections).omit({
-  id: true,
-  lastSyncAt: true,
-  lastTestAt: true,
-  connectionStatus: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertDatabaseConnectionSchema = createInsertSchema(databaseConnections);
 
-export const insertAgentProfileSchema = createInsertSchema(agentProfiles).omit({
-  id: true,
-  earningsBalance: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertAgentProfileSchema = createInsertSchema(agentProfiles);
 
-export const insertAgentActivitySchema = createInsertSchema(agentActivities).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertAgentActivitySchema = createInsertSchema(agentActivities);
 
-export const insertDeviceLoginSchema = createInsertSchema(deviceLogins).omit({
-  id: true,
-  loginAt: true,
-});
+export const insertDeviceLoginSchema = createInsertSchema(deviceLogins);
 
 export const updateSystemSettingSchema = z.object({
   key: z.string().min(1, "Setting key is required"),
@@ -1410,6 +1306,54 @@ export const insertPredictedResultSchema = createInsertSchema(predictedResults).
 export type InsertPredictedResult = z.infer<typeof insertPredictedResultSchema>;
 export type PredictedResult = typeof predictedResults.$inferSelect;
 
+// Crash Game Settings Table
+export const crashSettings = pgTable("crash_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  houseEdge: decimal("house_edge", { precision: 5, scale: 2 }).notNull().default("20.00"), // Percentage e.g. 20.00%
+  maxMultiplier: decimal("max_multiplier", { precision: 10, scale: 2 }).notNull().default("50.00"), // Max crash multiplier e.g. 50.00x
+  minCrashMultiplier: decimal("min_crash_multiplier", { precision: 5, scale: 2 }).notNull().default("1.01"),
+  minBetAmount: decimal("min_bet_amount", { precision: 18, scale: 2 }).notNull().default("50.00"), // Min bet in coins
+  maxBetAmount: decimal("max_bet_amount", { precision: 18, scale: 2 }).notNull().default("10000.00"), // Max bet in coins
+  crashEnabled: boolean("crash_enabled").notNull().default(true),
+  updatedBy: varchar("updated_by").notNull(), // FK to users
+  createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+
+export const insertCrashSettingSchema = createInsertSchema(crashSettings, {
+  id: z.string().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+});
+
+export type InsertCrashSetting = z.infer<typeof insertCrashSettingSchema>;
+export type CrashSetting = typeof crashSettings.$inferSelect;
+
+// Advanced Personalized Crash Settings Table
+export const advancedCrashSettings = pgTable("advanced_crash_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  deepThinkingEnabled: boolean("deep_thinking_enabled").notNull().default(false),
+  noBetBaitMinMultiplier: decimal("no_bet_bait_min_multiplier", { precision: 10, scale: 2 }).notNull().default("7.00"),
+  noBetBaitMaxMultiplier: decimal("no_bet_bait_max_multiplier", { precision: 10, scale: 2 }).notNull().default("20.00"),
+  whaleTargetMinMultiplier: decimal("whale_target_min_multiplier", { precision: 5, scale: 2 }).notNull().default("1.01"),
+  whaleTargetMaxMultiplier: decimal("whale_target_max_multiplier", { precision: 5, scale: 2 }).notNull().default("1.04"),
+  standardLossMaxThreshold: decimal("standard_loss_max_threshold", { precision: 5, scale: 2 }).notNull().default("2.00"),
+  playerWinProbability: decimal("player_win_probability", { precision: 5, scale: 2 }).notNull().default("40.00"), // Probability of getting a good multiplier
+  updatedBy: varchar("updated_by").notNull(),
+  createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const insertAdvancedCrashSettingSchema = createInsertSchema(advancedCrashSettings, {
+  id: z.string().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+});
+
+export type InsertAdvancedCrashSetting = z.infer<typeof insertAdvancedCrashSettingSchema>;
+export type AdvancedCrashSetting = typeof advancedCrashSettings.$inferSelect;
+
 // Coin flip games insert schemas
 export const insertCoinFlipGameSchema = createInsertSchema(coinFlipGames).omit({
   id: true,
@@ -1555,11 +1499,7 @@ export type CreateTelegramScheduledPost = z.infer<typeof createTelegramScheduled
 export type TelegramScheduledPost = typeof telegramScheduledPosts.$inferSelect;
 
 // Telegram Reactions insert schemas
-export const insertTelegramReactionSettingSchema = createInsertSchema(telegramReactionSettings).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertTelegramReactionSettingSchema = createInsertSchema(telegramReactionSettings);
 
 export const updateTelegramReactionSettingSchema = z.object({
   id: z.string().optional(),
@@ -1568,11 +1508,7 @@ export const updateTelegramReactionSettingSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
-export const insertTelegramGroupSchema = createInsertSchema(telegramGroups).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertTelegramGroupSchema = createInsertSchema(telegramGroups);
 
 export const updateTelegramGroupSchema = z.object({
   id: z.string().min(1, "Group ID is required"),
@@ -1587,11 +1523,7 @@ export const updateTelegramGroupSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
-export const insertTelegramReactionOrderSchema = createInsertSchema(telegramReactionOrders).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertTelegramReactionOrderSchema = createInsertSchema(telegramReactionOrders);
 
 export type InsertTelegramReactionSetting = z.infer<typeof insertTelegramReactionSettingSchema>;
 export type UpdateTelegramReactionSetting = z.infer<typeof updateTelegramReactionSettingSchema>;

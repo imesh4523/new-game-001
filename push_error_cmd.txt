@@ -1,0 +1,48 @@
+remote: error: GH013: Repository rule violations found for refs/heads/main.        
+remote: 
+remote: - GITHUB PUSH PROTECTION        
+remote:   —————————————————————————————————————————        
+remote:     Resolve the following violations before pushing again        
+remote: 
+remote:     - Push cannot contain secrets        
+remote: 
+remote:             
+remote:      (?) Learn how to resolve a blocked push        
+remote:      https://docs.github.com/code-security/secret-scanning/working-with-secret-scanning-and-push-protection/working-with-push-protection-from-the-command-line#resolving-a-blocked-push        
+remote:             
+remote:             
+remote:       —— Aiven Service Password ————————————————————————————        
+remote:        locations:        
+remote:          - commit: c17968e9e2a570e961fe8977e3e27bb35c74c637        
+remote:            path: test-do-connection.ts:7        
+remote:             
+remote:        (?) To push, remove secret from commit(s) or follow this URL to allow the secret.        
+remote:        https://github.com/imesh4523/new-game-001/security/secret-scanning/unblock-secret/3AfQ52n2elqP29sPfvQDMFqVWFH        
+remote:             
+remote:             
+remote:       —— Aiven Service Password ————————————————————————————        
+remote:        locations:        
+remote:          - commit: c17968e9e2a570e961fe8977e3e27bb35c74c637        
+remote:            path: drizzle.config.backup.ts:10        
+remote:          - commit: c17968e9e2a570e961fe8977e3e27bb35c74c637        
+remote:            path: full-backup-sync.js:16        
+remote:          - commit: c17968e9e2a570e961fe8977e3e27bb35c74c637        
+remote:            path: test-backup-sync.js:16        
+remote:             
+remote:        (?) To push, remove secret from commit(s) or follow this URL to allow the secret.        
+remote:        https://github.com/imesh4523/new-game-001/security/secret-scanning/unblock-secret/3AfQ4x7HG9ge044u5WrXC6XHKC2        
+remote:             
+remote:             
+remote:       —— Aiven Service Password ————————————————————————————        
+remote:        locations:        
+remote:          - commit: c17968e9e2a570e961fe8977e3e27bb35c74c637        
+remote:            path: .replit:48        
+remote:             
+remote:        (?) To push, remove secret from commit(s) or follow this URL to allow the secret.        
+remote:        https://github.com/imesh4523/new-game-001/security/secret-scanning/unblock-secret/3AfQ4yOjGuo2Vtdng74op8Btdhr        
+remote:             
+remote: 
+remote: 
+To https://github.com/imesh4523/new-game-001.git
+ ! [remote rejected] main -> main (push declined due to repository rule violations)
+error: failed to push some refs to 'https://github.com/imesh4523/new-game-001.git'

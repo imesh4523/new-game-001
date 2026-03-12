@@ -4171,7 +4171,7 @@ export class DatabaseStorage implements IStorage {
         .orderBy(desc(bets.createdAt));
 
       if (userBets.length > 100) {
-        const idsToDelete = userBets.slice(100).map(b => b.id);
+        const idsToDelete = userBets.slice(100).map((b: any) => b.id as string);
         
         await db.delete(bets)
           .where(inArray(bets.id, idsToDelete));
@@ -5951,6 +5951,8 @@ export class MemStorage implements IStorage {
         houseEdge: "20.00",
         maxMultiplier: "50.00",
         minCrashMultiplier: "1.01",
+        minBetAmount: "50.00",
+        maxBetAmount: "10000.00",
         crashEnabled: true,
         updatedBy: 'system',
         createdAt: new Date(),

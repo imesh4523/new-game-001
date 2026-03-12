@@ -43,17 +43,18 @@ const LiveBalance = memo(function LiveBalance({ user, className = "", showTrend 
     user.id.length > 0
   );
 
-  // Fetch user data only on mount - WebSocket handles all real-time updates (optimized for Android performance)
+  // Fetch user data - poll every 3s so crash game balance stays live
   const { data: liveUser, refetch: refetchUser } = useQuery({
     queryKey: ['/api/user/current'], 
-    refetchInterval: false, // Disabled polling - WebSocket provides real-time updates
-    enabled: isAuthenticated, // Always enabled for authenticated users
+    refetchInterval: 3000,           // Poll every 3s for live balance
+    enabled: isAuthenticated,
     retry: false,
-    staleTime: 0, // Always treat data as stale to prevent caching issues
-    refetchOnMount: true, // Always refetch on mount to get fresh data
-    refetchOnWindowFocus: true, // Refetch when user returns to tab
-    refetchOnReconnect: true, // Refetch when network reconnects
+    staleTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
+
 
   // Use live user data for authenticated users, original user data for demo users
   const currentUser = isAuthenticated ? (liveUser || user) : user;

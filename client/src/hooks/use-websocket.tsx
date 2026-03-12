@@ -156,10 +156,18 @@ export function useWebSocket() {
         if (import.meta.env.DEV) {
           console.log('✅ WebSocket connected successfully');
         }
-        
         // Send a ping immediately to verify connection is alive
         if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-          wsRef.current.send(JSON.stringify({ type: 'ping' }));
+          try {
+            const user = queryClient.getQueryData<any>(['/api/auth/me']);
+            if (user && user.id) {
+              wsRef.current.send(JSON.stringify({ type: 'auth', userId: user.id }));
+            } else {
+              wsRef.current.send(JSON.stringify({ type: 'ping' }));
+            }
+          } catch (e) {
+            wsRef.current.send(JSON.stringify({ type: 'ping' }));
+          }
         }
       };
 

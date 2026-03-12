@@ -61,7 +61,8 @@ import {
   Unlock,
   AlertCircle,
   ListOrdered,
-  History as HistoryIcon
+  History as HistoryIcon,
+  Brain
 } from "lucide-react";
 import { memo } from "react";
 import { Button } from "@/components/ui/button";
@@ -935,6 +936,726 @@ function LiveAlgorithmMonitor() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+// Crash Game Algorithm Settings Component
+function CrashSettingsManager() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch settings using the query client
+  const { data: settings, isLoading: isLoadingSettings } = useQuery<any>({
+    queryKey: ['/api/admin/crash/settings'],
+  });
+
+  const { data: advancedSettings, isLoading: isLoadingAdvanced } = useQuery<any>({
+    queryKey: ['/api/admin/advanced-crash/settings'],
+  });
+
+  const { data: crashStats } = useQuery<any>({
+    queryKey: ['/api/admin/crash/stats'],
+    refetchInterval: 4000,
+  });
+
+  const updateSettingsMutation = useMutation({
+    mutationFn: async (payload: { basic: any, advanced: any }) => {
+      const p1 = apiRequest('POST', '/api/admin/crash/settings', payload.basic).then(r => r.json());
+      const p2 = apiRequest('POST', '/api/admin/advanced-crash/settings', payload.advanced).then(r => r.json());
+      return Promise.all([p1, p2]);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/crash/settings'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/advanced-crash/settings'] });
+      toast({
+        title: "✅ Success",
+        description: "Crash game settings updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "❌ Error",
+        description: error.message || "Failed to update settings",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const [houseEdge, setHouseEdge] = useState("20");
+  const [maxMultiplier, setMaxMultiplier] = useState("50");
+  const [minMultiplier, setMinMultiplier] = useState("1.01");
+  const [minBetAmount, setMinBetAmount] = useState("50");
+  const [maxBetAmount, setMaxBetAmount] = useState("10000");
+
+  // Advanced settings states
+  const [deepThinkingEnabled, setDeepThinkingEnabled] = useState(false);
+  const [whaleTargetMinMultiplier, setWhaleTargetMinMultiplier] = useState("1.01");
+  const [whaleTargetMaxMultiplier, setWhaleTargetMaxMultiplier] = useState("1.04");
+  const [noBetBaitMinMultiplier, setNoBetBaitMinMultiplier] = useState("7.00");
+  const [noBetBaitMaxMultiplier, setNoBetBaitMaxMultiplier] = useState("20.00");
+  const [standardLossMaxThreshold, setStandardLossMaxThreshold] = useState("2.00");
+  const [playerWinProbability, setPlayerWinProbability] = useState("40.00");
+
+  useEffect(() => {
+    if (settings) {
+      setHouseEdge(settings.houseEdge || "20");
+      setMaxMultiplier(settings.maxMultiplier || "50");
+      setMinMultiplier(settings.minMultiplier || settings.minCrashMultiplier || "1.01");
+      setMinBetAmount(settings.minBetAmount || "50");
+      setMaxBetAmount(settings.maxBetAmount || "10000");
+    }
+  }, [settings]);
+
+  useEffect(() => {
+    if (advancedSettings) {
+      setDeepThinkingEnabled(advancedSettings.deepThinkingEnabled !== false);
+      setWhaleTargetMinMultiplier(advancedSettings.whaleTargetMinMultiplier || "1.01");
+      setWhaleTargetMaxMultiplier(advancedSettings.whaleTargetMaxMultiplier || "1.04");
+      setNoBetBaitMinMultiplier(advancedSettings.noBetBaitMinMultiplier || "7.00");
+      setNoBetBaitMaxMultiplier(advancedSettings.noBetBaitMaxMultiplier || "20.00");
+      setStandardLossMaxThreshold(advancedSettings.standardLossMaxThreshold || "2.00");
+      setPlayerWinProbability(advancedSettings.playerWinProbability || "40.00");
+    }
+  }, [advancedSettings]);
+
+  if (isLoadingSettings || isLoadingAdvanced) {
+    return (
+      <Card className="admin-card border-orange-500/20">
+        <CardContent className="pt-6 flex justify-center">
+          <Activity className="h-8 w-8 text-orange-400 animate-spin" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const handleSave = () => {
+    updateSettingsMutation.mutate({
+      basic: { houseEdge, maxMultiplier, minMultiplier, minBetAmount, maxBetAmount },
+      advanced: {
+        deepThinkingEnabled,
+        whaleTargetMinMultiplier,
+        whaleTargetMaxMultiplier,
+        noBetBaitMinMultiplier,
+        noBetBaitMaxMultiplier,
+        standardLossMaxThreshold,
+        playerWinProbability
+      }
+    });
+  };
+
+  return (
+    <Card className="admin-card admin-glow border-orange-500/20">
+      <CardHeader>
+        <CardTitle className="text-white flex items-center gap-2">
+          <Zap className="h-5 w-5 text-orange-400" />
+          Crash Game Global Settings (3XBet)
+        </CardTitle>
+        <CardDescription className="text-orange-300">
+          Configure the core game rules alongside Deep Thinking Artificial Intelligence
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Crash Stats Summary — Row 1: Core Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-slate-800/60 border border-orange-500/20 rounded-xl p-4 flex flex-col gap-1">
+            <span className="text-orange-400 text-xs font-semibold uppercase tracking-wider">Total Rounds</span>
+            <span className="text-white text-2xl font-bold">{crashStats?.totalGames ?? '—'}</span>
+            <span className="text-slate-400 text-xs">Games played</span>
+          </div>
+          <div className="bg-slate-800/60 border border-blue-500/20 rounded-xl p-4 flex flex-col gap-1">
+            <span className="text-blue-400 text-xs font-semibold uppercase tracking-wider">Total Bets</span>
+            <span className="text-white text-2xl font-bold">{crashStats?.totalBets ?? '—'}</span>
+            <span className="text-slate-400 text-xs">All crash wagers</span>
+          </div>
+          <div className="bg-slate-800/60 border border-green-500/20 rounded-xl p-4 flex flex-col gap-1">
+            <span className="text-green-400 text-xs font-semibold uppercase tracking-wider">Total Wins</span>
+            <span className="text-white text-2xl font-bold">{crashStats?.totalWins ?? '—'}</span>
+            <span className="text-slate-400 text-xs">Players cashed out</span>
+          </div>
+          <div className={`bg-slate-800/60 border rounded-xl p-4 flex flex-col gap-1 ${
+            parseFloat(crashStats?.totalHouseProfit || '0') >= 0
+              ? 'border-emerald-500/30'
+              : 'border-red-500/30'
+          }`}>
+            <span className={`text-xs font-semibold uppercase tracking-wider ${
+              parseFloat(crashStats?.totalHouseProfit || '0') >= 0 ? 'text-emerald-400' : 'text-red-400'
+            }`}>House Profit</span>
+            <span className={`text-2xl font-bold ${
+              parseFloat(crashStats?.totalHouseProfit || '0') >= 0 ? 'text-emerald-300' : 'text-red-300'
+            }`}>
+              {crashStats ? `${parseFloat(crashStats.totalHouseProfit) >= 0 ? '+' : ''}${crashStats.totalHouseProfit}` : '—'}
+            </span>
+            <span className="text-slate-400 text-xs">Net earnings (coins)</span>
+          </div>
+        </div>
+
+        {/* Crash Stats Summary — Row 2: Financial Details */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-slate-800/60 border border-yellow-500/20 rounded-xl p-4 flex flex-col gap-1">
+            <span className="text-yellow-400 text-xs font-semibold uppercase tracking-wider">🪙 Total Wagered</span>
+            <span className="text-white text-2xl font-bold">{crashStats?.totalWagered ?? '—'}</span>
+            <span className="text-slate-400 text-xs">Total coins bet</span>
+          </div>
+          <div className="bg-slate-800/60 border border-pink-500/20 rounded-xl p-4 flex flex-col gap-1">
+            <span className="text-pink-400 text-xs font-semibold uppercase tracking-wider">💸 Total Payout</span>
+            <span className="text-white text-2xl font-bold">{crashStats?.totalPayout ?? '—'}</span>
+            <div className="flex flex-col gap-0.5 mt-1">
+              <span className="text-slate-400 text-xs">Coins paid to winners</span>
+              <span className="text-slate-500 text-xs">
+                Expected profit: <span className="text-yellow-300 font-semibold">+{crashStats?.expectedProfit ?? '0.00'}</span> (at 20% edge)
+              </span>
+            </div>
+          </div>
+          <div className={`bg-slate-800/60 border rounded-xl p-4 flex flex-col gap-1 ${
+            parseFloat(crashStats?.breakEvenNeeded || '0') > 0 ? 'border-amber-500/30' : 'border-indigo-500/20'
+          }`}>
+            <span className="text-indigo-400 text-xs font-semibold uppercase tracking-wider">📊 Win Rate</span>
+            <span className="text-white text-2xl font-bold">{crashStats ? `${crashStats.winRate}%` : '—'}</span>
+            <div className="flex flex-col gap-0.5 mt-1">
+              <span className="text-slate-400 text-xs">
+                {crashStats?.totalWins ?? 0} wins / {crashStats?.totalBets ?? 0} bets
+              </span>
+              {parseFloat(crashStats?.breakEvenNeeded || '0') > 0 && (
+                <span className="text-amber-400 text-xs font-medium">
+                  ⚠️ Break-even: +{crashStats?.breakEvenNeeded} coins needed
+                </span>
+              )}
+              {parseFloat(crashStats?.breakEvenNeeded || '1') === 0 && crashStats && (
+                <span className="text-emerald-400 text-xs font-medium">✅ House is profitable</span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="space-y-2">
+            <Label htmlFor="houseEdge" className="text-orange-200">Global House Edge (%)</Label>
+            <div className="flex gap-2 items-center">
+              <Input
+                id="houseEdge"
+                type="number"
+                step="0.1"
+                min="0"
+                max="100"
+                value={houseEdge}
+                onChange={(e) => setHouseEdge(e.target.value)}
+                className="bg-slate-800/50 border-orange-500/30 text-white"
+              />
+              <Percent className="h-4 w-4 text-orange-400" />
+            </div>
+            <p className="text-xs text-orange-400/70">Formula baseline edge</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="minMultiplier" className="text-orange-200">Algorithmic Min Multiplier (x)</Label>
+            <Input
+              id="minMultiplier"
+              type="number"
+              step="0.01"
+              min="1"
+              value={minMultiplier}
+              onChange={(e) => setMinMultiplier(e.target.value)}
+              className="bg-slate-800/50 border-orange-500/30 text-white"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="maxMultiplier" className="text-orange-200">Algorithmic Max Multiplier (x)</Label>
+            <Input
+              id="maxMultiplier"
+              type="number"
+              step="1"
+              min="1"
+              value={maxMultiplier}
+              onChange={(e) => setMaxMultiplier(e.target.value)}
+              className="bg-slate-800/50 border-orange-500/30 text-white"
+            />
+          </div>
+        </div>
+
+        {/* 🎰 Bet Limits — Admin Configurable */}
+        <div className="mt-4 p-4 rounded-xl border border-orange-500/20 bg-orange-950/10">
+          <h4 className="text-sm font-bold text-orange-300 mb-3 flex items-center gap-2">
+            🎰 Crash Bet Limits (Coins)
+          </h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="minBetAmount" className="text-orange-200">Minimum Bet Amount (coins)</Label>
+              <Input
+                id="minBetAmount"
+                type="number"
+                step="1"
+                min="1"
+                value={minBetAmount}
+                onChange={(e) => setMinBetAmount(e.target.value)}
+                className="bg-slate-800/50 border-orange-500/30 text-white"
+              />
+              <p className="text-xs text-orange-400/70">Users must bet at least this many coins</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="maxBetAmount" className="text-orange-200">Maximum Bet Amount (coins)</Label>
+              <Input
+                id="maxBetAmount"
+                type="number"
+                step="1"
+                min="1"
+                value={maxBetAmount}
+                onChange={(e) => setMaxBetAmount(e.target.value)}
+                className="bg-slate-800/50 border-orange-500/30 text-white"
+              />
+              <p className="text-xs text-orange-400/70">Users cannot bet more than this</p>
+            </div>
+          </div>
+          <p className="text-[10px] text-slate-500 mt-2">💡 Changes saved with the main Save button below. Takes effect immediately on next bet.</p>
+        </div>
+
+
+        <div className="mt-8 border-t border-purple-500/20 pt-6">
+           <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-purple-300 flex items-center gap-2">
+              <Brain className="h-5 w-5 text-purple-400" />
+              Deep Thinking & Personalization Algorithm
+            </h3>
+            <div className="flex items-center space-x-2">
+              <Switch
+                checked={deepThinkingEnabled}
+                onCheckedChange={setDeepThinkingEnabled}
+              />
+              <span className="text-white text-sm font-medium">
+                {deepThinkingEnabled ? 'Algorithm Active' : 'RNG Only (No Targeting)'}
+              </span>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+             <div className="space-y-4 p-4 rounded-lg bg-red-500/10 border border-red-500/20">
+               <h4 className="text-red-300 font-medium">Whale Hunting (High Bets)</h4>
+               <p className="text-xs text-red-200/70">When a user wagers {" > "} 100 coins, game limits their personal crash multiplier to force early loss.</p>
+               <div className="flex gap-4">
+                 <div className="space-y-2 w-full">
+                    <Label className="text-red-200">Target Min (x)</Label>
+                    <Input type="number" step="0.01" value={whaleTargetMinMultiplier} onChange={(e) => setWhaleTargetMinMultiplier(e.target.value)} className="bg-slate-800/50 border-red-500/30 text-white" />
+                 </div>
+                 <div className="space-y-2 w-full">
+                    <Label className="text-red-200">Target Max (x)</Label>
+                    <Input type="number" step="0.01" value={whaleTargetMaxMultiplier} onChange={(e) => setWhaleTargetMaxMultiplier(e.target.value)} className="bg-slate-800/50 border-red-500/30 text-white" />
+                 </div>
+               </div>
+             </div>
+
+             <div className="space-y-4 p-4 rounded-lg bg-green-500/10 border border-green-500/20">
+               <h4 className="text-green-300 font-medium">Bait Mode (No Bets)</h4>
+               <p className="text-xs text-green-200/70">When no real user enters a round, algorithm inflates multiplier significantly to entice future bets.</p>
+               <div className="flex gap-4">
+                 <div className="space-y-2 w-full">
+                    <Label className="text-green-200">Bait Min (x)</Label>
+                    <Input type="number" step="0.01" value={noBetBaitMinMultiplier} onChange={(e) => setNoBetBaitMinMultiplier(e.target.value)} className="bg-slate-800/50 border-green-500/30 text-white" />
+                 </div>
+                 <div className="space-y-2 w-full">
+                    <Label className="text-green-200">Bait Max (x)</Label>
+                    <Input type="number" step="0.01" value={noBetBaitMaxMultiplier} onChange={(e) => setNoBetBaitMaxMultiplier(e.target.value)} className="bg-slate-800/50 border-green-500/30 text-white" />
+                 </div>
+               </div>
+             </div>
+
+             <div className="space-y-4 p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
+               <h4 className="text-blue-300 font-medium">Standard Target Constraints</h4>
+               <p className="text-xs text-blue-200/70">For standard bets, the forced loss will strictly hover between 1.01x and this maximum.</p>
+               <div className="space-y-2 max-w-[200px]">
+                  <Label className="text-blue-200">Standard Loss Max (x)</Label>
+                  <Input type="number" step="0.01" value={standardLossMaxThreshold} onChange={(e) => setStandardLossMaxThreshold(e.target.value)} className="bg-slate-800/50 border-blue-500/30 text-white" />
+               </div>
+             </div>
+
+             <div className="space-y-4 p-4 rounded-lg bg-purple-500/10 border border-purple-500/20">
+               <h4 className="text-purple-300 font-medium">Win Probability Rate</h4>
+               <p className="text-xs text-purple-200/70">Chance a user skips the trap array and receives the completely fair Global Crash Point calculation.</p>
+               <div className="space-y-2 max-w-[200px]">
+                  <Label className="text-purple-200">Probability (%)</Label>
+                  <Input type="number" step="1" value={playerWinProbability} onChange={(e) => setPlayerWinProbability(e.target.value)} className="bg-slate-800/50 border-purple-500/30 text-white" />
+               </div>
+             </div>
+          </div>
+        </div>
+
+        <div className="p-4 bg-orange-500/10 border border-orange-500/20 rounded-lg mt-4">
+          <h4 className="text-orange-300 font-semibold mb-2 flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4" />
+            Dynamic Personalization Info
+          </h4>
+          <p className="text-orange-200/80 text-sm">
+            Deep thinking overrides the central RNG outcome per user profile. The main physical node loop will stay alive over customized packets so bots can simulate long climbs.
+          </p>
+        </div>
+
+        <div className="flex justify-end pt-4">
+          <Button
+            onClick={handleSave}
+            disabled={updateSettingsMutation.isPending}
+            className="bg-orange-600 hover:bg-orange-700 text-white shadow-lg shadow-orange-500/20"
+          >
+            {updateSettingsMutation.isPending ? "Saving..." : "Save Algorithm Settings"}
+          </Button>
+        </div>
+
+        <CrashLiveTracker />
+        <CrashHouseProfitPanel />
+        <CrashPlayerAnalytics />
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── House Profit Breakdown (Main vs Crash) ─────────────────────────────────
+function CrashHouseProfitPanel() {
+  const { data: profitData } = useQuery<any>({
+    queryKey: ['/api/admin/house-profit'],
+    refetchInterval: 10000,
+  });
+
+  if (!profitData) return null;
+
+  const gameColors: Record<string, string> = {
+    crash: 'text-orange-400 border-orange-500/30 bg-orange-950/20',
+    color: 'text-blue-400 border-blue-500/30 bg-blue-950/20',
+    number: 'text-purple-400 border-purple-500/30 bg-purple-950/20',
+    size: 'text-pink-400 border-pink-500/30 bg-pink-950/20',
+  };
+
+  const totalProfit = parseFloat(profitData.totalHouseProfit || '0');
+
+  return (
+    <Card className="admin-card border-slate-700/50 mt-6 bg-slate-900/50">
+      <CardHeader className="pb-3 border-b border-slate-700/30">
+        <CardTitle className="text-white flex items-center justify-between text-base">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">🏦</span>
+            Main House Profit vs Crash Profit
+          </div>
+          <div className={`text-sm font-bold px-3 py-1 rounded-full ${totalProfit >= 0 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-red-500/20 text-red-300 border border-red-500/30'}`}>
+            Total: {totalProfit >= 0 ? '+' : ''}{profitData.totalHouseProfit} ({profitData.overallProfitRate}%)
+          </div>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {profitData.games?.map((game: any) => {
+            const profit = parseFloat(game.houseProfit);
+            const colorClass = gameColors[game.betType] || 'text-slate-400 border-slate-600 bg-slate-800/40';
+            return (
+              <div key={game.betType} className={`border rounded-xl p-3 flex flex-col gap-1 ${colorClass}`}>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider">{game.betType}</span>
+                  <span className="text-[10px] text-slate-400">{game.totalBets} bets</span>
+                </div>
+                <div className={`text-xl font-bold ${profit >= 0 ? 'text-emerald-300' : 'text-red-300'}`}>
+                  {profit >= 0 ? '+' : ''}{game.houseProfit}
+                </div>
+                <div className="text-xs text-slate-500">
+                  Wagered: <span className="text-slate-300">{game.totalWagered}</span>
+                </div>
+                <div className="text-xs text-slate-500">
+                  Paid out: <span className="text-slate-300">{game.totalPayout}</span>
+                </div>
+                <div className={`text-xs font-semibold ${profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {game.profitRate}% edge
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Per-User Crash Analytics (Targeting Leaderboard) ───────────────────────
+function CrashPlayerAnalytics() {
+  const { data: players } = useQuery<any[]>({
+    queryKey: ['/api/admin/crash/player-analytics'],
+    refetchInterval: 8000,
+  });
+
+  if (!players || players.length === 0) return null;
+
+  const topWinners = [...players].sort((a, b) => parseFloat(b.totalPayout) - parseFloat(a.totalPayout)).slice(0, 5);
+  const topLosers = [...players].sort((a, b) => parseFloat(b.houseProfit) - parseFloat(a.houseProfit)).slice(0, 5);
+
+  return (
+    <Card className="admin-card border-slate-700/50 mt-6 bg-slate-900/50">
+      <CardHeader className="pb-3 border-b border-slate-700/30">
+        <CardTitle className="text-white flex items-center gap-2 text-base">
+          <span className="text-lg">🎯</span>
+          Crash Player Analytics — Win/Loss Leaderboard
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Top losers (house earned most from these) */}
+          <div>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-3 flex items-center gap-1.5">
+              💰 House Earns Most From
+            </h4>
+            <div className="space-y-2">
+              {topLosers.map((p, i) => (
+                <div key={p.userId} className="flex items-center justify-between bg-slate-800/50 border border-slate-700/50 rounded-lg px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-slate-500 text-xs font-bold">#{i + 1}</span>
+                    <span className="text-slate-300 text-sm font-medium">{p.username}</span>
+                    {p.isHotPlayer && <span className="text-[9px] bg-red-500/20 border border-red-500/30 text-red-300 px-1 rounded">🔥 ACTIVE</span>}
+                  </div>
+                  <div className="flex items-center gap-3 text-xs">
+                    <span className="text-slate-400">{p.roundsPlayed} rounds</span>
+                    <span className="text-emerald-400 font-bold">+{p.houseProfit}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Top winners (watchlist) */}
+          <div>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-amber-400 mb-3 flex items-center gap-1.5">
+              ⚠️ Watchlist — Top Winners
+            </h4>
+            <div className="space-y-2">
+              {topWinners.map((p, i) => {
+                const profit = parseFloat(p.houseProfit);
+                return (
+                  <div key={p.userId} className={`flex items-center justify-between rounded-lg px-3 py-2 border ${profit < 0 ? 'bg-red-950/30 border-red-500/40' : 'bg-slate-800/50 border-slate-700/50'}`}>
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-500 text-xs font-bold">#{i + 1}</span>
+                      <span className="text-slate-300 text-sm font-medium">{p.username}</span>
+                      {p.isHotPlayer && <span className="text-[9px] bg-amber-500/20 border border-amber-500/30 text-amber-300 px-1 rounded">🎯 TARGET</span>}
+                    </div>
+                    <div className="flex items-center gap-3 text-xs">
+                      <span className="text-slate-400">{p.winRate}% WR</span>
+                      <span className={profit < 0 ? 'text-red-400 font-bold' : 'text-emerald-400 font-bold'}>
+                        {profit >= 0 ? '+' : ''}{p.houseProfit}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Full table */}
+        <div className="mt-6">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">All Crash Players</h4>
+          <div className="rounded-md border border-slate-700 overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-800/80 border-b border-slate-700">
+                <tr>
+                  <th className="text-left text-slate-300 font-semibold py-2 px-3">Player</th>
+                  <th className="text-right text-slate-300 font-semibold py-2 px-3">Rounds</th>
+                  <th className="text-right text-slate-300 font-semibold py-2 px-3">Wagered</th>
+                  <th className="text-right text-slate-300 font-semibold py-2 px-3">Won</th>
+                  <th className="text-right text-slate-300 font-semibold py-2 px-3">Win%</th>
+                  <th className="text-right text-slate-300 font-semibold py-2 px-3">House P&L</th>
+                </tr>
+              </thead>
+              <tbody>
+                {players.map((p) => {
+                  const profit = parseFloat(p.houseProfit);
+                  return (
+                    <tr key={p.userId} className="border-slate-800/50 border-b hover:bg-slate-800/30 transition-colors">
+                      <td className="py-2 px-3">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-slate-300">{p.username}</span>
+                          {p.isHotPlayer && <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1 rounded">🎯</span>}
+                        </div>
+                      </td>
+                      <td className="text-right text-slate-400 py-2 px-3">{p.roundsPlayed}</td>
+                      <td className="text-right text-white py-2 px-3">{p.totalWagered}</td>
+                      <td className="text-right text-slate-400 py-2 px-3">{p.wins}W / {p.losses}L</td>
+                      <td className="text-right py-2 px-3">
+                        <span className={parseFloat(p.winRate) > 50 ? 'text-amber-400' : 'text-slate-400'}>{p.winRate}%</span>
+                      </td>
+                      <td className={`text-right font-bold py-2 px-3 ${profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                        {profit >= 0 ? '+' : ''}{p.houseProfit}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function CrashLiveTracker() {
+  const { data: liveData } = useQuery<any>({
+    queryKey: ['/api/admin/crash/live'],
+    refetchInterval: 1000, // Poll every second for live tracking
+  });
+
+  if (!liveData) return null;
+
+  const realPlayers = (liveData.players || []).filter((p: any) => !p.isFake);
+
+  return (
+    <Card className="admin-card border-orange-500/20 mt-8 bg-slate-900/50">
+      <CardHeader className="pb-4 border-b border-orange-500/10">
+        <CardTitle className="text-white flex items-center justify-between">
+          <div className="flex items-center gap-2 text-lg">
+            <Activity className="h-5 w-5 text-orange-400" />
+            Live Crash Tracker (Deep Thinking)
+          </div>
+          <div className="flex items-center gap-4 text-sm font-normal bg-slate-800 px-3 py-1 rounded-full border border-slate-700">
+            <span className={liveData.phase === 'flying' ? 'text-green-400' : 'text-orange-400'}>
+              Status: {liveData.phase.toUpperCase()}
+            </span>
+            <span className="text-slate-400">|</span>
+            <span className="text-white">
+              Multiplier: <span className="text-orange-400 font-bold">{liveData.multiplier}x</span>
+            </span>
+            <span className="text-slate-400">|</span>
+            <span className="text-purple-300 font-semibold">
+              {realPlayers.length} Real Player{realPlayers.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-4">
+        <div className="rounded-md border border-slate-700 overflow-hidden bg-slate-900/80">
+          <Table>
+            <TableHeader className="bg-slate-800/80 border-b border-slate-700">
+              <TableRow>
+                <TableHead className="text-slate-300 font-semibold py-3">Player</TableHead>
+                <TableHead className="text-slate-300 font-semibold text-right py-3">Wagered</TableHead>
+                <TableHead className="text-slate-300 font-semibold text-right py-3 bg-purple-500/5">AI Target (x)</TableHead>
+                <TableHead className="text-slate-300 font-semibold text-right py-3">Status</TableHead>
+                <TableHead className="text-slate-300 font-semibold text-right py-3">House Profit</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {realPlayers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-slate-500 py-10">
+                    <div className="flex flex-col items-center gap-2">
+                      <span className="text-2xl">👁️</span>
+                      <span>No real players in this round yet</span>
+                      <span className="text-xs text-slate-600">Watching for bets...</span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                realPlayers.map((p: any, i: number) => (
+                  <TableRow key={i} className="border-slate-800/50 hover:bg-slate-800/30 transition-colors">
+                    <TableCell className="font-medium text-slate-300">
+                      <div className="flex items-center gap-2">
+                        <span className="text-purple-300">{p.username}</span>
+                        <span className="text-[10px] bg-purple-500/20 border border-purple-500/30 text-purple-300 px-1.5 py-0.5 rounded">REAL</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right text-white">
+                      {parseFloat(p.bet || 0).toFixed(2)}
+                    </TableCell>
+                    <TableCell className="text-right bg-purple-500/5">
+                      {p.isFake ? (
+                        <span className="text-slate-600">-</span>
+                      ) : (
+                        <span className="text-purple-400 font-bold">{p.personalTarget}x</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {p.cashedOut ? (
+                        <span className="text-green-400 font-medium">Cashed Out (@{p.cashoutMultiplier}x)</span>
+                      ) : p.hasCrashed ? (
+                        <span className="text-red-400 font-medium flex items-center justify-end gap-1">
+                          <AlertTriangle className="h-3 w-3" /> Trapped
+                        </span>
+                      ) : liveData.phase === 'crashed' ? (
+                        <span className="text-red-400 font-medium">Crashed</span>
+                      ) : (
+                        <span className="text-orange-400 animate-pulse">Flying...</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                       {p.cashedOut ? (
+                         <span className="text-red-400 font-medium">-{((p.bet * p.cashoutMultiplier) - p.bet).toFixed(2)}</span>
+                       ) : p.hasCrashed || liveData.phase === 'crashed' ? (
+                         <span className="text-green-400 font-medium">+{parseFloat(p.bet).toFixed(2)}</span>
+                       ) : (
+                         <span className="text-slate-500">Pending</span>
+                       )}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+        <div className="mt-4 space-y-3">
+          {/* Player counts */}
+          <div className="flex justify-between items-center text-sm px-1">
+            <span className="text-slate-400 flex items-center gap-2">
+              Global Crash Point:
+              <span className="text-white font-mono bg-slate-800 px-2 py-0.5 border border-slate-700 rounded">{liveData.globalCrashPoint}x</span>
+            </span>
+            <span className="text-slate-400">
+              Real Players: <span className="text-purple-300 font-bold">{realPlayers.length}</span> |
+              Total in round: <span className="text-white">{(liveData.players || []).length}</span>
+            </span>
+          </div>
+
+          {/* 🏦 Live Session P&L from House Always Wins engine */}
+          {liveData.houseSession && (
+            <div className={`rounded-lg border p-3 ${
+              liveData.houseSession.isPanicMode
+                ? 'border-red-500/50 bg-red-950/30'
+                : liveData.houseSession.isUnderPressure
+                  ? 'border-amber-500/40 bg-amber-950/20'
+                  : 'border-emerald-500/20 bg-emerald-950/10'
+            }`}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                  🏦 House Always Wins — Live Session
+                </span>
+                <div className="flex items-center gap-2">
+                  {liveData.houseSession.isPanicMode && (
+                    <span className="text-[10px] bg-red-500 text-white px-2 py-0.5 rounded-full font-bold animate-pulse">🚨 PANIC MODE</span>
+                  )}
+                  {!liveData.houseSession.isPanicMode && liveData.houseSession.isUnderPressure && (
+                    <span className="text-[10px] bg-amber-500 text-black px-2 py-0.5 rounded-full font-bold">⚡ PRESSURE</span>
+                  )}
+                  {!liveData.houseSession.isPanicMode && !liveData.houseSession.isUnderPressure && (
+                    <span className="text-[10px] bg-emerald-500 text-black px-2 py-0.5 rounded-full font-bold">✅ STABLE</span>
+                  )}
+                </div>
+              </div>
+              <div className="grid grid-cols-4 gap-3 text-sm">
+                <div className="text-center">
+                  <div className="text-slate-400 text-xs">Rounds</div>
+                  <div className="text-white font-bold">{liveData.houseSession.roundCount}</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-slate-400 text-xs">Wagered</div>
+                  <div className="text-yellow-300 font-bold">{liveData.houseSession.totalWagered}</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-slate-400 text-xs">Paid Out</div>
+                  <div className="text-pink-300 font-bold">{liveData.houseSession.totalPayout}</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-slate-400 text-xs">Session P&L</div>
+                  <div className={`font-bold ${parseFloat(liveData.houseSession.houseProfit) >= 0 ? 'text-emerald-300' : 'text-red-300'}`}>
+                    {parseFloat(liveData.houseSession.houseProfit) >= 0 ? '+' : ''}{liveData.houseSession.houseProfit}
+                    <span className="text-xs ml-1 opacity-70">({liveData.houseSession.profitRate}%)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+      </CardContent>
+    </Card>
   );
 }
 
@@ -5899,6 +6620,10 @@ export default function AdminPage() {
             <TabsTrigger value="algorithm-monitor" data-testid="tab-algorithm-monitor" className="data-[state=active]:bg-cyan-600 data-[state=active]:text-white">
               <Activity className="h-4 w-4 mr-1" />
               Algorithm
+            </TabsTrigger>
+            <TabsTrigger value="crash-settings" data-testid="tab-crash-settings" className="data-[state=active]:bg-orange-600 data-[state=active]:text-white">
+              <Zap className="h-4 w-4 mr-1" />
+              Crash
             </TabsTrigger>
           </TabsList>
 
@@ -13407,6 +14132,11 @@ export default function AdminPage() {
           {/* Algorithm Monitor Tab */}
           <TabsContent value="algorithm-monitor" className="space-y-6">
             <LiveAlgorithmMonitor />
+          </TabsContent>
+
+          {/* Crash Game Settings Tab */}
+          <TabsContent value="crash-settings" className="space-y-6">
+            <CrashSettingsManager />
           </TabsContent>
         </Tabs>
       </main>

@@ -11,6 +11,8 @@ import { useWebSocket } from "@/hooks/use-websocket";
 import { usdToGoldCoins, formatGoldCoinsText } from "@/lib/currency";
 
 const QUICK_BETS = [100, 300, 900, 2000, 8000, 30000];
+const MIN_BET = 50;
+const MAX_BET = 10000;
 
 const CrashGame: React.FC = () => {
   const { user } = useAuth();
@@ -121,8 +123,8 @@ const CrashGame: React.FC = () => {
             <Rocket className="w-5 h-5 text-primary-foreground" />
           </div>
           <div>
-            <span className="font-black text-lg tracking-tight">CRASH</span>
-            <span className="text-[10px] text-muted-foreground ml-1.5 font-medium">GAME</span>
+            <span className="font-black text-lg tracking-tight text-primary">3XBet</span>
+            <span className="text-[10px] text-muted-foreground ml-1.5 font-medium">Crash Game</span>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -211,9 +213,9 @@ const CrashGame: React.FC = () => {
             {/* Betting controls */}
             <div className="mt-3 rounded-2xl p-4 bg-crash-surface border border-border">
               {/* Bet amount input */}
-              <div className="flex items-center gap-1.5 mb-3">
+              <div className="flex items-center gap-1.5 mb-1">
                 <button
-                  onClick={() => setBetAmount(Math.max(0, betAmount - 100))}
+                  onClick={() => setBetAmount(Math.max(MIN_BET, betAmount - 100))}
                   className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center active:scale-95 transition-transform"
                   disabled={currentBet > 0}
                 >
@@ -222,37 +224,47 @@ const CrashGame: React.FC = () => {
                 <input
                   type="number"
                   value={betAmount}
-                  onChange={(e) => setBetAmount(Math.max(0, Number(e.target.value)))}
-                  className="flex-1 h-10 text-center font-bold text-lg bg-input rounded-xl border-0 text-foreground outline-none focus:ring-2 focus:ring-primary/50"
+                  min={MIN_BET}
+                  max={MAX_BET}
+                  onChange={(e) => setBetAmount(Math.max(MIN_BET, Math.min(MAX_BET, Number(e.target.value))))}
+                  className={`flex-1 h-10 text-center font-bold text-lg bg-input rounded-xl border-0 outline-none focus:ring-2 ${
+                    betAmount < MIN_BET ? 'text-red-400 focus:ring-red-500/50' : 'text-foreground focus:ring-primary/50'
+                  }`}
                   disabled={currentBet > 0}
                 />
                 <button
-                  onClick={() => setBetAmount(betAmount + 100)}
+                  onClick={() => setBetAmount(Math.min(MAX_BET, betAmount + 100))}
                   className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center active:scale-95 transition-transform"
                   disabled={currentBet > 0}
                 >
                   <Plus className="w-4 h-4 text-secondary-foreground" />
                 </button>
               </div>
+              <div className="flex justify-between text-[10px] px-1 mb-3">
+                <span className={betAmount < MIN_BET ? 'text-red-400 font-semibold' : 'text-muted-foreground'}>
+                  Min: {MIN_BET} coins
+                </span>
+                <span className="text-muted-foreground">Max: {MAX_BET.toLocaleString()} coins</span>
+              </div>
 
               {/* x2 / 1/2 / reset */}
               <div className="flex gap-1.5 mb-3">
                 <button
-                  onClick={() => setBetAmount(Math.floor(betAmount / 2))}
+                  onClick={() => setBetAmount(Math.max(MIN_BET, Math.floor(betAmount / 2)))}
                   className="flex-1 py-2 rounded-xl text-xs font-bold bg-secondary text-secondary-foreground active:scale-95 transition-transform"
                   disabled={currentBet > 0}
                 >
                   ½
                 </button>
                 <button
-                  onClick={() => setBetAmount(betAmount * 2)}
+                  onClick={() => setBetAmount(Math.min(MAX_BET, betAmount * 2))}
                   className="flex-1 py-2 rounded-xl text-xs font-bold bg-secondary text-secondary-foreground active:scale-95 transition-transform"
                   disabled={currentBet > 0}
                 >
                   x2
                 </button>
                 <button
-                  onClick={() => setBetAmount(0)}
+                  onClick={() => setBetAmount(MIN_BET)}
                   className="px-4 py-2 rounded-xl text-xs font-bold bg-secondary text-secondary-foreground active:scale-95 transition-transform"
                   disabled={currentBet > 0}
                 >
@@ -291,7 +303,7 @@ const CrashGame: React.FC = () => {
               ) : (
                 <button
                   onClick={placeBet}
-                  disabled={currentBet > 0 || betAmount <= 0 || betAmount > (user ? usdToGoldCoins(user.balance) : 0) || phase === "crashed"}
+                  disabled={currentBet > 0 || betAmount < MIN_BET || betAmount > MAX_BET || betAmount > (user ? usdToGoldCoins(user.balance) : 0) || phase === "crashed"}
                   className="w-full py-4 rounded-2xl font-black text-lg bg-primary text-primary-foreground active:scale-[0.97] transition-transform disabled:opacity-40 shadow-lg shadow-primary/25"
                 >
                   {currentBet > 0 ? "✓ Bet Placed" : "🎯 Place Bet"}
