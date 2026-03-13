@@ -530,14 +530,19 @@ export default function ActivityPage() {
                       </div>
                     </div>
                     
-                    <div className="text-right">
+                    <div className="text-right flex flex-col items-end gap-1">
+                      {item.betAmount && (
+                        <p className="text-[10px] text-white/40 mb-0.5">
+                          Bet: {formatGoldCoins(usdToGoldCoins(item.betAmount))}
+                        </p>
+                      )}
                       {item.type === 'loss' ? (
-                        <p className="font-semibold text-red-400">
-                          -{formatGoldCoins(usdToGoldCoins(item.amount))}
+                        <p className="font-bold text-red-400 text-sm">
+                          Result: -{formatGoldCoins(usdToGoldCoins(item.amount))}
                         </p>
                       ) : (
-                        <p className={`font-semibold ${getActivityColor(item.type)}`}>
-                          {item.type === 'win' || item.type === 'deposit' ? '+' : item.type === 'bet' || item.type === 'withdrawal' ? '-' : ''}
+                        <p className={`font-bold text-sm ${getActivityColor(item.type)}`}>
+                          {item.type === 'win' ? 'Result: +' : item.type === 'deposit' ? '+' : item.type === 'bet' || item.type === 'withdrawal' ? '-' : ''}
                           {formatGoldCoins(usdToGoldCoins(item.amount))}
                         </p>
                       )}

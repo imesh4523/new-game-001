@@ -65,6 +65,8 @@ class BalanceIntegrityService {
       // Initial signup bonus that all users receive
       const SIGNUP_BONUS = 0.09;
 
+      const { coinFlipGames, promoCodeRedemptions, bets: betsTable } = await import("@shared/schema");
+
       // Get all transactions affecting this user's balance
       // NOTE: referral_bonus and agent_commission go to totalCommission (available rewards),
       // NOT to balance. They only affect balance when withdrawn via commission_withdrawal.
@@ -73,8 +75,18 @@ class BalanceIntegrityService {
           totalDeposits: sql<string>`COALESCE(SUM(CASE WHEN ${transactions.type} = 'deposit' AND ${transactions.status} = 'completed' THEN CAST(${transactions.fiatAmount} AS NUMERIC) ELSE 0 END), 0)`,
           totalCommissionWithdrawals: sql<string>`COALESCE(SUM(CASE WHEN ${transactions.type} = 'commission_withdrawal' AND ${transactions.status} = 'completed' THEN CAST(${transactions.fiatAmount} AS NUMERIC) ELSE 0 END), 0)`,
           totalWithdrawals: sql<string>`COALESCE(SUM(CASE WHEN ${transactions.type} = 'withdrawal' AND ${transactions.status} = 'completed' THEN CAST(${transactions.fiatAmount} AS NUMERIC) ELSE 0 END), 0)`,
-          totalBets: sql<string>`COALESCE((SELECT SUM(CAST(amount AS NUMERIC)) FROM ${bets} WHERE ${bets.userId} = ${userId}), 0)`,
-          totalWinnings: sql<string>`COALESCE((SELECT SUM(CAST(actual_payout AS NUMERIC)) FROM ${bets} WHERE ${bets.userId} = ${userId} AND (${bets.status} = 'won' OR ${bets.status} = 'cashed_out' OR ${bets.status} = 'cancelled') AND actual_payout IS NOT NULL), 0)`,
+          
+          // Regular bets from 'bets' table
+          totalBets: sql<string>`COALESCE((SELECT SUM(CAST(amount AS NUMERIC)) FROM ${betsTable} WHERE ${betsTable.userId} = ${userId}), 0)`,
+          totalWinnings: sql<string>`COALESCE((SELECT SUM(CAST(actual_payout AS NUMERIC)) FROM ${betsTable} WHERE ${betsTable.userId} = ${userId} AND (${betsTable.status} = 'won' OR ${betsTable.status} = 'cashed_out' OR ${betsTable.status} = 'cancelled') AND actual_payout IS NOT NULL), 0)`,
+          
+          // Coin Flip games
+          totalCoinFlipBets: sql<string>`COALESCE((SELECT SUM(CAST(bet_amount AS NUMERIC)) FROM ${coinFlipGames} WHERE ${coinFlipGames.userId} = ${userId}), 0)`,
+          totalCoinFlipWinnings: sql<string>`COALESCE((SELECT SUM(CAST(win_amount AS NUMERIC)) FROM ${coinFlipGames} WHERE ${coinFlipGames.userId} = ${userId} AND won = true AND win_amount IS NOT NULL), 0)`,
+          
+          // Promo Code redemptions
+          totalPromoBonus: sql<string>`COALESCE((SELECT SUM(CAST(amount_awarded AS NUMERIC)) FROM ${promoCodeRedemptions} WHERE ${promoCodeRedemptions.userId} = ${userId}), 0)`,
+          
           transactionCount: sql<number>`COUNT(*)`,
           lastTransactionDate: sql<Date>`MAX(${transactions.createdAt})`
         })
@@ -84,22 +96,35 @@ class BalanceIntegrityService {
       const row = result[0];
       
       if (!row || Number(row.transactionCount) === 0) {
-        // No transactions, user should have signup bonus
-        return {
-          balance: SIGNUP_BONUS.toFixed(8),
-          transactionCount: 0,
-          lastTransactionDate: null
-        };
+        // No transactions, but might still have bets or bonuses
+        const totalBetsVal = parseFloat(row.totalBets || "0");
+        const totalWinningsVal = parseFloat(row.totalWinnings || "0");
+        const totalCFBetsVal = parseFloat(row.totalCoinFlipBets || "0");
+        const totalCFWinningsVal = parseFloat(row.totalCoinFlipWinnings || "0");
+        const totalPromoVal = parseFloat(row.totalPromoBonus || "0");
+
+        if (totalBetsVal === 0 && totalWinningsVal === 0 && totalCFBetsVal === 0 && totalCFWinningsVal === 0 && totalPromoVal === 0) {
+          return {
+            balance: SIGNUP_BONUS.toFixed(8),
+            transactionCount: 0,
+            lastTransactionDate: null
+          };
+        }
       }
 
-      // Calculate: Signup bonus + deposits + commission withdrawals + winnings - bets - withdrawals
+      // Calculate: Signup bonus + deposits + commission withdrawals + winnings + game winnings + promo bonuses - bets - withdrawals
       const totalDeposits = parseFloat(row.totalDeposits || "0");
       const totalCommissionWithdrawals = parseFloat(row.totalCommissionWithdrawals || "0");
       const totalWithdrawals = parseFloat(row.totalWithdrawals || "0");
       const totalBets = parseFloat(row.totalBets || "0");
       const totalWinnings = parseFloat(row.totalWinnings || "0");
+      const totalCoinFlipBets = parseFloat(row.totalCoinFlipBets || "0");
+      const totalCoinFlipWinnings = parseFloat(row.totalCoinFlipWinnings || "0");
+      const totalPromoBonus = parseFloat(row.totalPromoBonus || "0");
 
-      const calculatedBalance = SIGNUP_BONUS + totalDeposits + totalCommissionWithdrawals + totalWinnings - totalBets - totalWithdrawals;
+      const calculatedBalance = SIGNUP_BONUS + totalDeposits + totalCommissionWithdrawals + totalPromoBonus + 
+                                totalWinnings + totalCoinFlipWinnings - 
+                                totalBets - totalCoinFlipBets - totalWithdrawals;
 
       return {
         balance: Math.max(0, calculatedBalance).toFixed(8),

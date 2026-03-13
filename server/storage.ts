@@ -1843,6 +1843,8 @@ export class DatabaseStorage implements IStorage {
     };
     if (actualPayout !== undefined) {
       updateData.actualPayout = actualPayout;
+    } else if (status === 'lost') {
+      updateData.actualPayout = '0.00000000';
     }
     if (cashOutMultiplier !== undefined) {
       updateData.cashOutMultiplier = cashOutMultiplier;

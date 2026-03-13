@@ -72,39 +72,46 @@ export default function MyBets() {
               return (
                 <div 
                   key={bet.id}
-                  className="grid gap-3 items-center p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-all border border-white/5"
-                  style={{ gridTemplateColumns: 'minmax(0, 1fr) minmax(8rem, auto) repeat(2, minmax(4rem, auto))' }}
+                  className="p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all border border-white/10 group relative overflow-hidden"
                   data-testid={`card-bet-${bet.id}`}
                 >
-                  {/* Period */}
-                  <span className="font-mono text-white/90 text-xs tabular-nums" title={bet.periodId || bet.gameId}>
-                    {bet.periodId || bet.gameId || '----'}
-                  </span>
-
-                  {/* Bet Value */}
-                  <div className="justify-self-end">
-                    <Badge 
-                      variant="outline" 
-                      className={`text-xs border w-fit capitalize ${getBetValueColor(bet)}`}
-                    >
-                      {value}
-                    </Badge>
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] text-white/40 font-mono mb-1 uppercase tracking-wider">
+                        Period ID
+                      </span>
+                      <span className="font-mono text-white/90 text-sm tabular-nums">
+                        {bet.periodId || bet.gameId || '----'}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] text-white/40 font-mono mb-1 uppercase tracking-wider block">
+                        Prediction
+                      </span>
+                      <Badge 
+                        variant="outline" 
+                        className={`text-xs border px-3 py-1 capitalize font-bold ${getBetValueColor(bet)} shadow-sm group-hover:scale-105 transition-transform`}
+                      >
+                        {value}
+                      </Badge>
+                    </div>
                   </div>
 
-                  {/* Bet Amount */}
-                  <div className="text-right">
-                    <p className="font-semibold text-white/90 text-sm">
-                      {formatGoldCoins(usdToGoldCoins(bet.amount))}
-                    </p>
-                  </div>
-
-                  {/* Potential Win */}
-                  <div className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <TrendingUp className="w-3 h-3 text-green-400" />
-                      <p className="font-semibold text-green-400 text-sm">
-                        {formatGoldCoins(usdToGoldCoins(bet.potential))}
+                  <div className="grid grid-cols-2 gap-3 p-3 rounded-lg bg-black/40 border border-white/5">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] text-white/50 mb-1">Bet Amount</span>
+                      <p className="font-bold text-white text-sm">
+                        {formatGoldCoins(usdToGoldCoins(bet.amount))}
                       </p>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <span className="text-[10px] text-white/50 mb-1">Potential Win</span>
+                      <div className="flex items-center gap-1.5">
+                        <TrendingUp className="w-3.5 h-3.5 text-green-400 animate-pulse" />
+                        <p className="font-bold text-green-400 text-sm">
+                          {formatGoldCoins(usdToGoldCoins(bet.potential))}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>

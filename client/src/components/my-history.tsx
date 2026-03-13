@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Trophy, X, TrendingUp, TrendingDown, Clock, DollarSign } from "lucide-react";
+import { formatGoldCoins, usdToGoldCoins } from "@/lib/currency";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function MyHistory() {
@@ -231,13 +232,23 @@ export default function MyHistory() {
                           </div>
                         </div>
                         
-                        <div className="flex items-center justify-between text-xs text-white/60">
-                          <span>Amount: ${parseFloat(bet.amount).toFixed(2)}</span>
-                          {bet.status === 'won' && (
-                            <span className="text-green-400">
-                              Won: ${parseFloat(bet.potential || bet.amount).toFixed(2)}
+                        <div className="flex flex-col gap-1.5 mt-3 p-3 rounded-lg bg-black/40 border border-white/10">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-white/50">Bet Amount</span>
+                            <span className="text-sm font-bold text-white/90">
+                              {formatGoldCoins(usdToGoldCoins(bet.amount))}
                             </span>
-                          )}
+                          </div>
+                          <div className="flex items-center justify-between border-t border-white/5 pt-1.5">
+                            <span className="text-xs font-medium text-white/50">Payout</span>
+                            <span className={`text-sm font-black ${bet.status === 'won' ? 'text-green-400' : 'text-red-400'}`}>
+                              {bet.status === 'won' 
+                                ? '+' + formatGoldCoins(usdToGoldCoins(bet.actualPayout || bet.potential || bet.amount)) 
+                                : formatGoldCoins('0')}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-end mt-2 text-[10px] text-white/40 italic">
                           <span>{formatDate(bet.createdAt)}</span>
                         </div>
                       </div>
