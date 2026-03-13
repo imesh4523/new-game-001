@@ -107,21 +107,20 @@ export async function processCompletedPayment(
       // Handle agent self-deposit - credit agent's wallet balance
       const agent = await storage.getUser(transaction.userId);
       if (agent) {
-        // Use actual received amount (outcome_amount) if available, otherwise fall back to original amount
+        // Always credit the originally requested fiat amount so players don't lose money to network/gateway fees
         let usdAmount: number;
-        if (paymentStatus.outcome_amount && paymentStatus.outcome_amount > 0) {
-          // Validate currency - ensure we're receiving USD
+        if (transaction.fiatAmount && parseFloat(transaction.fiatAmount) > 0) {
+          usdAmount = parseFloat(transaction.fiatAmount);
+        } else if (paymentStatus.price_amount && paymentStatus.price_amount > 0) {
+          usdAmount = paymentStatus.price_amount;
+        } else if (paymentStatus.outcome_amount && paymentStatus.outcome_amount > 0) {
+          // Fallback for unexpected cases
           const receivedCurrency = paymentStatus.outcome_currency || paymentStatus.price_currency || 'USD';
           if (receivedCurrency.toLowerCase() !== 'usd') {
-            // Use original amount instead for non-USD currencies
-            usdAmount = parseFloat(transaction.fiatAmount || '0');
+            usdAmount = 0; // Better safe than credit weird amounts
           } else {
-            // Use the actual USD amount received from NOWPayments
             usdAmount = paymentStatus.outcome_amount;
           }
-        } else if (transaction.fiatAmount) {
-          // Fallback to original requested amount if outcome_amount not available
-          usdAmount = parseFloat(transaction.fiatAmount);
         } else {
           usdAmount = 0;
         }
@@ -180,21 +179,20 @@ export async function processCompletedPayment(
       // Regular user deposit - credit user balance in USD based on actual received amount
       const user = await storage.getUser(transaction.userId);
       if (user) {
-        // Use actual received amount (outcome_amount) if available, otherwise fall back to original amount
+        // Always credit the originally requested fiat amount so players don't lose money to network/gateway fees
         let usdAmount: number;
-        if (paymentStatus.outcome_amount && paymentStatus.outcome_amount > 0) {
-          // Validate currency - ensure we're receiving USD
+        if (transaction.fiatAmount && parseFloat(transaction.fiatAmount) > 0) {
+          usdAmount = parseFloat(transaction.fiatAmount);
+        } else if (paymentStatus.price_amount && paymentStatus.price_amount > 0) {
+          usdAmount = paymentStatus.price_amount;
+        } else if (paymentStatus.outcome_amount && paymentStatus.outcome_amount > 0) {
+          // Fallback for unexpected cases
           const receivedCurrency = paymentStatus.outcome_currency || paymentStatus.price_currency || 'USD';
           if (receivedCurrency.toLowerCase() !== 'usd') {
-            // Use original amount instead for non-USD currencies
-            usdAmount = parseFloat(transaction.fiatAmount || '0');
+            usdAmount = 0; // Better safe than credit weird amounts
           } else {
-            // Use the actual USD amount received from NOWPayments
             usdAmount = paymentStatus.outcome_amount;
           }
-        } else if (transaction.fiatAmount) {
-          // Fallback to original requested amount if outcome_amount not available
-          usdAmount = parseFloat(transaction.fiatAmount);
         } else {
           usdAmount = 0;
         }
