@@ -7747,23 +7747,21 @@ export async function registerRoutes(app: Express): Promise<{ httpServer: Server
               // Regular user deposit - credit user balance in USD based on actual received amount
               const user = await storage.getUser(transaction.userId);
               if (user) {
-                // Use actual received amount (outcome_amount) if available, otherwise fall back to original amount
+                // Always credit the originally requested fiat amount so players don't lose money to network/gateway fees
                 let usdAmount: number;
-                if (ipnData.outcome_amount && ipnData.outcome_amount > 0) {
-                  // Validate currency - ensure we're receiving USD
+                if (transaction.fiatAmount && parseFloat(transaction.fiatAmount) > 0) {
+                  usdAmount = parseFloat(transaction.fiatAmount);
+                } else if (ipnData.price_amount && ipnData.price_amount > 0) {
+                  usdAmount = ipnData.price_amount;
+                } else if (ipnData.outcome_amount && ipnData.outcome_amount > 0) {
+                  // Fallback for unexpected cases
                   const receivedCurrency = ipnData.outcome_currency || ipnData.price_currency || 'USD';
                   if (receivedCurrency.toLowerCase() !== 'usd') {
-                    // Use original amount instead for non-USD currencies
-                    usdAmount = parseFloat(transaction.fiatAmount || '0');
+                    usdAmount = 0; // Better safe than credit weird amounts
                   } else {
-                    // Use the actual USD amount received from NOWPayments
                     usdAmount = ipnData.outcome_amount;
                   }
-                } else if (transaction.fiatAmount) {
-                  // Fallback to original requested amount if outcome_amount not available
-                  usdAmount = parseFloat(transaction.fiatAmount);
                 } else {
-                  // Don't return error - acknowledge IPN to prevent retries
                   usdAmount = 0;
                 }
                 

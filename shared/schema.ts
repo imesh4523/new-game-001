@@ -842,7 +842,9 @@ export const upsertVipLevelTelegramLinkSchema = z.object({
 
 export const insertGameSchema = createInsertSchema(games);
 
-export const insertBetSchema = createInsertSchema(bets);
+export const insertBetSchema = createInsertSchema(bets, {
+  potential: z.string().optional(),
+});
 
 // Crash game specific schemas
 export const insertCrashGameSchema = createInsertSchema(games, {
