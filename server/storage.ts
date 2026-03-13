@@ -142,7 +142,7 @@ import { randomUUID } from "crypto";
 import * as bcrypt from "bcrypt";
 import { authenticator } from "otplib";
 import { db } from "./db";
-import { eq, desc, asc, count, sum, sql, and, not, like, inArray, type ExtractTablesWithRelations } from "drizzle-orm";
+import { eq, desc, asc, count, sum, sql, and, not, like, inArray, lt, type ExtractTablesWithRelations } from "drizzle-orm";
 import type { PgTransaction } from 'drizzle-orm/pg-core';
 import type { NeonHttpQueryResultHKT } from 'drizzle-orm/neon-http';
 import { realtimeSyncService } from "./realtime-sync-service";
@@ -284,6 +284,8 @@ export interface IStorage {
   updateBetStatus(betId: string, status: "pending" | "won" | "lost" | "cashed_out" | "cancelled", actualPayout?: string): Promise<Bet | undefined>;
   getActiveBetsByUser(userId: string): Promise<Bet[]>;
   getAllPendingBets(): Promise<Bet[]>;
+  getStuckPendingBets(minutesAgo: number): Promise<Bet[]>;
+  getRefundedCrashBets(): Promise<Bet[]>;
   
   // Crash game specific bet methods
   updateBetForCashout(betId: string, cashOutMultiplier: string, cashedOutAt: Date): Promise<Bet | undefined>;
@@ -1883,6 +1885,35 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(bets)
       .where(eq(bets.status, 'pending'))
+      .orderBy(desc(bets.createdAt));
+  }
+
+  async getStuckPendingBets(minutesAgo: number): Promise<Bet[]> {
+    const timestampMs = Date.now() - (minutesAgo * 60 * 1000);
+    const thresholdDate = new Date(timestampMs);
+    
+    return await db
+      .select()
+      .from(bets)
+      .where(
+        and(
+          eq(bets.status, 'pending'),
+          lt(bets.createdAt, thresholdDate)
+        )
+      )
+      .orderBy(desc(bets.createdAt));
+  }
+
+  async getRefundedCrashBets(): Promise<Bet[]> {
+    return await db
+      .select()
+      .from(bets)
+      .where(
+        and(
+          eq(bets.status, 'cancelled'),
+          eq(bets.betType, 'crash')
+        )
+      )
       .orderBy(desc(bets.createdAt));
   }
 
@@ -6597,7 +6628,7 @@ export class MemStorage implements IStorage {
     return total;
   }
 
-  async updateBetStatus(betId: string, status: "pending" | "won" | "lost" | "cashed_out", actualPayout?: string): Promise<Bet | undefined> {
+  async updateBetStatus(betId: string, status: "pending" | "won" | "lost" | "cashed_out" | "cancelled", actualPayout?: string): Promise<Bet | undefined> {
     const bet = this.bets.get(betId);
     if (!bet) return undefined;
     
@@ -6626,7 +6657,22 @@ export class MemStorage implements IStorage {
   }
 
   async getAllPendingBets(): Promise<Bet[]> {
-    return Array.from(this.bets.values()).filter(bet => bet.status === 'pending');
+    return Array.from(this.bets.values())
+      .filter(bet => bet.status === 'pending')
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async getStuckPendingBets(minutesAgo: number): Promise<Bet[]> {
+    const timestampMs = Date.now() - (minutesAgo * 60 * 1000);
+    return Array.from(this.bets.values())
+      .filter(bet => bet.status === 'pending' && bet.createdAt.getTime() < timestampMs)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async getRefundedCrashBets(): Promise<Bet[]> {
+    return Array.from(this.bets.values())
+      .filter(bet => bet.status === 'cancelled' && bet.betType === 'crash')
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 
   // Crash game specific bet methods

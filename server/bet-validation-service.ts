@@ -58,15 +58,13 @@ class BetValidationService {
         game.resultColor
       );
 
-      if (completedGames.length === 0) {
-        console.log('✓ [BetValidation] No completed games found');
-        return;
-      }
-
       let fixedCount = 0;
       let validatedCount = 0;
 
-      // Check each game's bets
+      if (completedGames.length === 0) {
+        console.log('✓ [BetValidation] No completed games found for standard validation');
+      } else {
+        // Check each game's bets
       for (const game of completedGames) {
         // ✅ CRITICAL FIX: Calculate correct color and size from the numeric result
         // Don't trust stored resultColor/resultSize as they might be incorrect!
@@ -138,13 +136,63 @@ class BetValidationService {
           }
         }
       }
+      
+      // ✅ NEW: Find and refund any "stuck" pending bets from completed games
+      const stuckBets = await storage.getStuckPendingBets(5); // Pending for > 5 minutes
+      let refundedCount = 0;
+      
+      for (const bet of stuckBets) {
+        // Double check the game is actually completed or doesn't exist anymore
+        const game = await storage.getGameByGameId(bet.gameId);
+        if (!game || game.status === 'completed' || game.status === 'cancelled') {
+          console.error(`❌ [BetValidation] FOUND STUCK PENDING BET!`);
+          console.error(`   Bet ID: ${bet.id}`);
+          console.error(`   Game ID: ${bet.gameId}`);
+          console.error(`   Amount wagered: ${bet.amount}`);
+          console.log(`🔧 [BetValidation] Auto-refunding stuck bet to user ${bet.userId}...`);
+          
+          await this.refundStuckBet(bet);
+          refundedCount++;
+        }
+      }
 
-      console.log(`✅ [BetValidation] Validated ${validatedCount} settled bets`);
-      if (fixedCount > 0) {
-        console.log(`🔧 [BetValidation] Fixed ${fixedCount} incorrectly settled bet(s)`);
+      if (validatedCount > 0) {
+        console.log(`✅ [BetValidation] Validated ${validatedCount} settled bets`);
+      }
+      if (fixedCount > 0 || refundedCount > 0) {
+        console.log(`🔧 [BetValidation] Fixed ${fixedCount} incorrectly settled bet(s) and refunded ${refundedCount} stuck bet(s)`);
+      }
       }
     } catch (error) {
       console.error('❌ [BetValidation] Error in bet validation service:', error);
+    }
+  }
+
+  private async refundStuckBet(bet: any) {
+    try {
+      const user = await storage.getUser(bet.userId);
+      if (!user) {
+        console.error(`❌ [BetValidation] User ${bet.userId} not found for refund`);
+        return;
+      }
+
+      const oldBalance = user.balance;
+      const betAmount = parseFloat(bet.amount);
+      
+      // Mark bet as cancelled/refunded
+      await storage.updateBetStatus(bet.id, "cancelled", bet.amount);
+
+      // Add payout back to user balance
+      const newBalance = (parseFloat(oldBalance) + betAmount).toFixed(8);
+      await storage.updateUserBalance(bet.userId, newBalance);
+
+      console.log(`✅ [BetValidation] Refunded stuck bet ${bet.id}: added ${betAmount.toFixed(2)} to balance`);
+
+      if (this.broadcastBalanceUpdate) {
+        this.broadcastBalanceUpdate(bet.userId, oldBalance, newBalance, 'win'); // treat refund as positive balance change
+      }
+    } catch (error) {
+      console.error(`❌ [BetValidation] Error refunding stuck bet ${bet.id}:`, error);
     }
   }
 

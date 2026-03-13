@@ -1,0 +1,70 @@
+User ID: ecf09361-2eae-4f8c-aeab-c2ca01b59452
+Email: imeshcheak@gmail.com
+Balance: 0.00000000
+Frozen Balance: 22.00000000
+Total Deposits: 22.00000000
+Total Withdrawals: 0.00000000
+Total Bets Amount: 53.60000000
+Total Winnings: 0.00000000
+Total Losses: 0.00000000
+
+--- LAST 30 BETS ---
+Bet 30f9ec21-040a-430a-b32c-770abbc0696c | crash_1773384623498 | Type: crash | Amount: 1.00000000 | Status: cashed_out | Payout: 1.19000000 | Time: Fri Mar 13 2026 06:50:25 GMT+0000 (Coordinated Universal Time)
+Bet 960899fe-061e-405d-b110-7f2d55ff44b7 | crash_1773384604804 | Type: crash | Amount: 1.00000000 | Status: lost | Payout: 0.00000000 | Time: Fri Mar 13 2026 06:50:07 GMT+0000 (Coordinated Universal Time)
+Bet d0a5af47-d0c5-4bd1-a79e-db37ea864498 | crash_1773384583820 | Type: crash | Amount: 1.00000000 | Status: lost | Payout: 0.00000000 | Time: Fri Mar 13 2026 06:49:45 GMT+0000 (Coordinated Universal Time)
+Bet 6c014261-7a10-4b59-87df-cdab7de33dab | crash_1773384566035 | Type: crash | Amount: 1.00000000 | Status: cashed_out | Payout: 1.19000000 | Time: Fri Mar 13 2026 06:49:27 GMT+0000 (Coordinated Universal Time)
+Bet 38eb673e-ab5a-4165-a624-939ad50501aa | crash_1773384546339 | Type: crash | Amount: 1.00000000 | Status: lost | Payout: 0.00000000 | Time: Fri Mar 13 2026 06:49:11 GMT+0000 (Coordinated Universal Time)
+Bet 87f2706c-9032-4ed2-b398-8874e039a2a7 | crash_1773384528126 | Type: crash | Amount: 1.00000000 | Status: cashed_out | Payout: 1.53000000 | Time: Fri Mar 13 2026 06:48:49 GMT+0000 (Coordinated Universal Time)
+Bet 56f0c2f7-9e6f-4bb0-8c34-37f0e6ec3fdf | crash_1773384505800 | Type: crash | Amount: 1.00000000 | Status: cashed_out | Payout: 1.13000000 | Time: Fri Mar 13 2026 06:48:27 GMT+0000 (Coordinated Universal Time)
+Bet 5d7a95ea-2e0d-45ab-ba33-f6602957c1dc | crash_1773384485900 | Type: crash | Amount: 1.00000000 | Status: cashed_out | Payout: 1.20000000 | Time: Fri Mar 13 2026 06:48:08 GMT+0000 (Coordinated Universal Time)
+Bet e5cea3fb-a905-4c80-abc9-ba3f583ff3e1 | crash_1773384457730 | Type: crash | Amount: 1.00000000 | Status: lost | Payout: 0.00000000 | Time: Fri Mar 13 2026 06:47:39 GMT+0000 (Coordinated Universal Time)
+Bet 30c0dbca-4179-48c8-b1fe-e03f9e2b4765 | crash_1773384438724 | Type: crash | Amount: 1.00000000 | Status: cashed_out | Payout: 1.48000000 | Time: Fri Mar 13 2026 06:47:18 GMT+0000 (Coordinated Universal Time)
+Bet 80558869-540b-4401-a9e9-d2f9c5acdfa1 | crash_1773384388409 | Type: crash | Amount: 1.00000000 | Status: lost | Payout: 0.00000000 | Time: Fri Mar 13 2026 06:46:30 GMT+0000 (Coordinated Universal Time)
+Bet 87606c01-bf76-4965-83f9-72e8da65d167 | crash_1773371611121 | Type: crash | Amount: 0.50000000 | Status: cashed_out | Payout: 0.65500000 | Time: Fri Mar 13 2026 03:13:33 GMT+0000 (Coordinated Universal Time)
+Bet c20a31de-5e6f-4aed-8f3c-1c5e758d195a | crash_1773371591830 | Type: crash | Amount: 0.50000000 | Status: lost | Payout: 0.00000000 | Time: Fri Mar 13 2026 03:13:17 GMT+0000 (Coordinated Universal Time)
+Bet b786e31f-3594-40f0-b57d-24cd87afcd84 | crash_1773371578301 | Type: crash | Amount: 1.00000000 | Status: lost | Payout: 0.00000000 | Time: Fri Mar 13 2026 03:13:00 GMT+0000 (Coordinated Universal Time)
+Bet a977a497-b90a-40a9-bd1b-8ea447413854 | crash_1773371555157 | Type: crash | Amount: 1.00000000 | Status: lost | Payout: 0.00000000 | Time: Fri Mar 13 2026 03:12:36 GMT+0000 (Coordinated Universal Time)
+Bet 766c1fbb-49a0-4be6-95ca-491e026c887f | crash_1773371542654 | Type: crash | Amount: 1.00000000 | Status: lost | Payout: 0.00000000 | Time: Fri Mar 13 2026 03:12:24 GMT+0000 (Coordinated Universal Time)
+Bet 42ae0057-a914-47df-8d81-091b119a7ec2 | crash_1773324274808 | Type: crash | Amount: 1.00000000 | Status: cashed_out | Payout: 1.76000000 | Time: Thu Mar 12 2026 14:04:37 GMT+0000 (Coordinated Universal Time)
+Bet 5b314fd3-b9ac-456c-b367-5a2188ec8661 | crash_1773319434640 | Type: crash | Amount: 1.00000000 | Status: lost | Payout: 0.00000000 | Time: Thu Mar 12 2026 12:43:58 GMT+0000 (Coordinated Universal Time)
+Bet d75562c6-72ba-4a18-9d4c-018cec2c47cc | crash_1773319417665 | Type: crash | Amount: 1.00000000 | Status: cashed_out | Payout: 1.29000000 | Time: Thu Mar 12 2026 12:43:40 GMT+0000 (Coordinated Universal Time)
+Bet eba87ca8-9bc2-43a5-a6ef-27cea61e27d0 | crash_1773319403206 | Type: crash | Amount: 1.00000000 | Status: lost | Payout: 0.00000000 | Time: Thu Mar 12 2026 12:43:28 GMT+0000 (Coordinated Universal Time)
+Bet 5884d33d-e516-43f0-9cf7-a055129cae63 | crash_1773319388128 | Type: crash | Amount: 1.00000000 | Status: cashed_out | Payout: 1.08000000 | Time: Thu Mar 12 2026 12:43:09 GMT+0000 (Coordinated Universal Time)
+Bet 95ef2949-fe8c-4c81-8b8c-beb3261ddf2f | crash_1773319372462 | Type: crash | Amount: 1.00000000 | Status: lost | Payout: 0.00000000 | Time: Thu Mar 12 2026 12:42:54 GMT+0000 (Coordinated Universal Time)
+Bet 2d819652-74b3-4bdd-97d5-a49403a37ea9 | crash_1773317069027 | Type: crash | Amount: 0.50000000 | Status: cashed_out | Payout: 0.54000000 | Time: Thu Mar 12 2026 12:04:30 GMT+0000 (Coordinated Universal Time)
+Bet aa2caf3e-acce-4e3f-866e-816139220cb1 | crash_1773317053173 | Type: crash | Amount: 0.50000000 | Status: lost | Payout: 0.00000000 | Time: Thu Mar 12 2026 12:04:14 GMT+0000 (Coordinated Universal Time)
+Bet fa63de26-ea53-40ca-848c-19704c472e1f | crash_1773317026986 | Type: crash | Amount: 0.50000000 | Status: lost | Payout: 0.00000000 | Time: Thu Mar 12 2026 12:03:49 GMT+0000 (Coordinated Universal Time)
+Bet caed7221-771c-46be-87c0-076e787fc600 | crash_1773317014870 | Type: crash | Amount: 0.50000000 | Status: lost | Payout: 0.00000000 | Time: Thu Mar 12 2026 12:03:37 GMT+0000 (Coordinated Universal Time)
+Bet b3dee925-11f9-42fc-aa4a-9b400dd42e67 | crash_1773316963678 | Type: crash | Amount: 0.50000000 | Status: lost | Payout: 0.00000000 | Time: Thu Mar 12 2026 12:02:45 GMT+0000 (Coordinated Universal Time)
+Bet 4f83ebe3-5846-4303-aa4a-0654904812aa | crash_1773316951149 | Type: crash | Amount: 0.50000000 | Status: lost | Payout: 0.00000000 | Time: Thu Mar 12 2026 12:02:33 GMT+0000 (Coordinated Universal Time)
+Bet e46d933d-f58b-4819-832c-9f8439fefbf3 | crash_1773316911287 | Type: crash | Amount: 0.50000000 | Status: cashed_out | Payout: 0.73500000 | Time: Thu Mar 12 2026 12:01:53 GMT+0000 (Coordinated Universal Time)
+Bet 3bc56097-bfe1-4265-85cb-de6d10392784 | crash_1773316894408 | Type: crash | Amount: 1.00000000 | Status: lost | Payout: 0.00000000 | Time: Thu Mar 12 2026 12:01:35 GMT+0000 (Coordinated Universal Time)
+
+--- TRANSACTIONS ---
+Tx 1654b8cd-6bc5-4c72-8416-08522b0761d4 | Type: deposit | Amount: 20.00 | Status: completed | Time: Thu Mar 12 2026 12:41:29 GMT+0000 (Coordinated Universal Time)
+Tx 90315505-5694-4083-a08b-bb13bf07be77 | Type: withdrawal | Amount: 11.00 | Status: completed | Time: Fri Feb 20 2026 07:28:15 GMT+0000 (Coordinated Universal Time)
+Tx 5a86b894-12cf-4c28-90c6-2cfa7e5802f2 | Type: commission_withdrawal | Amount: 1.10 | Status: completed | Time: Sun Feb 15 2026 14:20:36 GMT+0000 (Coordinated Universal Time)
+Tx 9761d52f-754a-43eb-82bb-60f47b94730e | Type: deposit | Amount: 11.00 | Status: failed | Time: Sat Feb 14 2026 12:46:33 GMT+0000 (Coordinated Universal Time)
+Tx 116c198e-f9db-4cea-a477-33a52573fc87 | Type: deposit | Amount: 11.00 | Status: completed | Time: Sat Feb 14 2026 07:36:51 GMT+0000 (Coordinated Universal Time)
+Tx 759587fd-2872-4c20-9aba-0772656e05bb | Type: deposit | Amount: 11.00 | Status: failed | Time: Fri Feb 13 2026 09:04:33 GMT+0000 (Coordinated Universal Time)
+Tx 52c82f87-5b68-4482-89cf-0078ce915fc7 | Type: withdrawal | Amount: 11.00 | Status: completed | Time: Fri Feb 13 2026 04:56:35 GMT+0000 (Coordinated Universal Time)
+Tx fb9a0a9a-532c-4a03-917a-7dfac59a9c6d | Type: deposit | Amount: 11.00 | Status: failed | Time: Fri Feb 06 2026 14:03:14 GMT+0000 (Coordinated Universal Time)
+Tx 3ff16214-155b-4211-86d9-9cd115ef39e4 | Type: deposit | Amount: 17.00 | Status: failed | Time: Fri Feb 06 2026 14:03:03 GMT+0000 (Coordinated Universal Time)
+Tx 77c32183-b981-47c5-b72d-bbc9aa767e80 | Type: deposit | Amount: 11.00 | Status: failed | Time: Sun Feb 01 2026 01:35:32 GMT+0000 (Coordinated Universal Time)
+Tx fc9d88b5-74b2-4ded-a169-6227cc6beeb6 | Type: deposit | Amount: 11.00 | Status: failed | Time: Mon Jan 26 2026 10:43:11 GMT+0000 (Coordinated Universal Time)
+Tx 3f9d8406-4940-4bcf-8d4a-4ddc8dd4458f | Type: deposit | Amount: 11.00 | Status: failed | Time: Mon Jan 26 2026 10:42:57 GMT+0000 (Coordinated Universal Time)
+Tx d748e49e-9b8e-4d5c-aa53-52aeba874bbe | Type: deposit | Amount: 20.00 | Status: failed | Time: Fri Jan 23 2026 18:42:09 GMT+0000 (Coordinated Universal Time)
+Tx 751b3e51-de64-495a-8d2d-eca917c032ba | Type: deposit | Amount: 15.00 | Status: failed | Time: Thu Jan 15 2026 08:14:08 GMT+0000 (Coordinated Universal Time)
+Tx 1fc42a7d-38b3-41d1-92bc-c97746a1e892 | Type: deposit | Amount: 11.00 | Status: failed | Time: Tue Jan 13 2026 06:06:21 GMT+0000 (Coordinated Universal Time)
+Tx f58bf546-b9b4-452a-a130-cb8d50a66ad7 | Type: withdrawal | Amount: 12.00 | Status: completed | Time: Mon Dec 29 2025 14:47:31 GMT+0000 (Coordinated Universal Time)
+Tx 87e2e21e-2457-42ea-b380-2fcc45a7de75 | Type: withdrawal | Amount: 12.00 | Status: completed | Time: Mon Dec 29 2025 12:16:33 GMT+0000 (Coordinated Universal Time)
+Tx e7e212b4-9e3f-41e0-8013-74a8a2c10806 | Type: commission_withdrawal | Amount: 0.10 | Status: completed | Time: Sat Dec 27 2025 06:50:02 GMT+0000 (Coordinated Universal Time)
+Tx c3041335-3e2a-4c11-92ca-2dc7a57adda4 | Type: deposit | Amount: 11.00 | Status: failed | Time: Wed Dec 24 2025 06:35:11 GMT+0000 (Coordinated Universal Time)
+Tx 0a245946-ad6f-4db3-a398-4e2778a83d7d | Type: deposit | Amount: 11.00 | Status: completed | Time: Wed Dec 24 2025 04:44:35 GMT+0000 (Coordinated Universal Time)
+Tx 9d7a511b-2376-4b22-8dfb-b869551bd185 | Type: deposit | Amount: 11.00 | Status: failed | Time: Tue Dec 23 2025 11:55:29 GMT+0000 (Coordinated Universal Time)
+Tx de735165-17d7-48d8-95e3-ac337fb6da5c | Type: deposit | Amount: 11.00 | Status: failed | Time: Fri Nov 28 2025 06:18:22 GMT+0000 (Coordinated Universal Time)
+Tx d4ceee52-8e52-4d91-8916-6d6881e36067 | Type: deposit | Amount: 11.00 | Status: failed | Time: Thu Nov 27 2025 15:45:55 GMT+0000 (Coordinated Universal Time)
+Tx e0abf313-dd50-417c-884c-455ee236c1df | Type: withdrawal | Amount: 32.00 | Status: completed | Time: Thu Nov 27 2025 11:02:49 GMT+0000 (Coordinated Universal Time)
+Tx 14783d46-e343-4990-b665-1230ef17c730 | Type: withdrawal | Amount: 16.00 | Status: completed | Time: Thu Nov 27 2025 08:23:54 GMT+0000 (Coordinated Universal Time)
+Tx d5704691-b456-46be-8637-76ec9c817a6a | Type: deposit | Amount: 50.00 | Status: failed | Time: Wed Nov 26 2025 08:29:49 GMT+0000 (Coordinated Universal Time)
+Tx 4e0ebeca-ceeb-430d-b539-0af00ac2fa4a | Type: deposit | Amount: 100.00 | Status: completed | Time: Wed Nov 26 2025 07:14:56 GMT+0000 (Coordinated Universal Time)

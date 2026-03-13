@@ -98,6 +98,7 @@ import { GameRecoveryDashboard } from "@/components/game-recovery-dashboard";
 import { TelegramSignalsManager } from "@/components/telegram-signals-manager";
 import { TelegramScheduledPostsManager } from "@/components/telegram-scheduled-posts-manager";
 import PaymentCheckerDashboard from "@/components/payment-checker-dashboard";
+import { CrashRefundsTracker } from "@/components/crash-refunds-tracker";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { InsertBettingTask, insertBettingTaskSchema } from "@shared/schema";
@@ -6624,6 +6625,10 @@ export default function AdminPage() {
             <TabsTrigger value="crash-settings" data-testid="tab-crash-settings" className="data-[state=active]:bg-orange-600 data-[state=active]:text-white">
               <Zap className="h-4 w-4 mr-1" />
               Crash
+            </TabsTrigger>
+            <TabsTrigger value="crash-refunds" data-testid="tab-crash-refunds" className="data-[state=active]:bg-green-600 data-[state=active]:text-white">
+              <ShieldCheck className="h-4 w-4 mr-1" />
+              Refunds
             </TabsTrigger>
           </TabsList>
 
@@ -14137,6 +14142,9 @@ export default function AdminPage() {
           {/* Crash Game Settings Tab */}
           <TabsContent value="crash-settings" className="space-y-6">
             <CrashSettingsManager />
+          </TabsContent>
+          <TabsContent value="crash-refunds" className="space-y-6">
+            <CrashRefundsTracker />
           </TabsContent>
         </Tabs>
       </main>

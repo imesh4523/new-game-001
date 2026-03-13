@@ -15190,6 +15190,27 @@ export async function registerRoutes(app: Express): Promise<{ httpServer: Server
     }
   });
 
+  app.get('/api/admin/crash/refunded-bets', requireAdmin, async (req, res) => {
+    try {
+      const bets = await storage.getRefundedCrashBets();
+      
+      // We also want to hydrate user information for these bets
+      const enrichedBets = await Promise.all(bets.map(async (bet) => {
+        const user = await storage.getUser(bet.userId);
+        return {
+          ...bet,
+          username: user?.username || 'Unknown User',
+          email: user?.email || 'No email'
+        };
+      }));
+      
+      res.json(enrichedBets);
+    } catch (error) {
+      console.error('Error fetching refunded crash bets:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
   app.get('/api/admin/crash/stats', requireAdmin, async (req, res) => {
     try {
       const { pool: pgPool } = await import('./db');
