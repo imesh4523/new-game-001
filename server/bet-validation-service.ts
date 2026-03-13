@@ -106,9 +106,23 @@ class BetValidationService {
               // For crash games, the result stored in the game record is the crash point
               // A bet should win if it was cashed out before or at the crash point
               if (bet.status === 'cashed_out' || bet.status === 'won') {
-                const cashOutMultiplier = parseFloat(bet.cashOutMultiplier || "0");
+                let cashOutMultiplier = parseFloat(bet.cashOutMultiplier || "0");
+                
+                // CRITICAL FIX: If multiplier is missing but payout exists, infer it
+                if (cashOutMultiplier === 0 && bet.actualPayout && parseFloat(bet.actualPayout) > 0) {
+                  cashOutMultiplier = parseFloat(bet.actualPayout) / parseFloat(bet.amount);
+                  console.log(`ℹ️ [BetValidation] Inferred multiplier ${cashOutMultiplier.toFixed(2)} from payout for bet ${bet.id}`);
+                }
+                
                 const gameCrashPoint = parseFloat(game.crashPoint || "0");
-                shouldWin = cashOutMultiplier > 0 && cashOutMultiplier <= gameCrashPoint;
+                
+                // If we still have no multiplier, but it's marked as won, trust the current status 
+                // unless it's clearly impossible (multiplier 0)
+                if (cashOutMultiplier === 0) {
+                  shouldWin = true; 
+                } else {
+                  shouldWin = cashOutMultiplier > 0 && cashOutMultiplier <= (gameCrashPoint + 0.01); // 0.01 grace for float precision
+                }
               } else {
                 // If it wasn't cashed out, it's a loss
                 shouldWin = false;

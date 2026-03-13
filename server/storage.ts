@@ -281,7 +281,7 @@ export interface IStorage {
   getBetsByUser(userId: string): Promise<Bet[]>;
   getBetsByGame(gameId: string): Promise<Bet[]>;
   getUserTotalBetAmountForGame(userId: string, gameId: string): Promise<number>;
-  updateBetStatus(betId: string, status: "pending" | "won" | "lost" | "cashed_out" | "cancelled", actualPayout?: string): Promise<Bet | undefined>;
+  updateBetStatus(betId: string, status: "pending" | "won" | "lost" | "cashed_out" | "cancelled", actualPayout?: string, cashOutMultiplier?: string): Promise<Bet | undefined>;
   getActiveBetsByUser(userId: string): Promise<Bet[]>;
   getAllPendingBets(): Promise<Bet[]>;
   getStuckPendingBets(minutesAgo: number): Promise<Bet[]>;
@@ -1823,7 +1823,7 @@ export class DatabaseStorage implements IStorage {
     return result[0]?.total ? parseFloat(result[0].total as string) : 0;
   }
 
-  async updateBetStatus(betId: string, status: "pending" | "won" | "lost" | "cashed_out" | "cancelled", actualPayout?: string): Promise<Bet | undefined> {
+  async updateBetStatus(betId: string, status: "pending" | "won" | "lost" | "cashed_out" | "cancelled", actualPayout?: string, cashOutMultiplier?: string): Promise<Bet | undefined> {
     // ✅ IDEMPOTENT SAFETY CHECK: Only allow transitions from "pending" to final states
     // This prevents re-settlement from overwriting existing outcomes
     const existingBet = await db
@@ -1843,6 +1843,9 @@ export class DatabaseStorage implements IStorage {
     };
     if (actualPayout !== undefined) {
       updateData.actualPayout = actualPayout;
+    }
+    if (cashOutMultiplier !== undefined) {
+      updateData.cashOutMultiplier = cashOutMultiplier;
     }
     
     const [bet] = await db
@@ -6628,7 +6631,7 @@ export class MemStorage implements IStorage {
     return total;
   }
 
-  async updateBetStatus(betId: string, status: "pending" | "won" | "lost" | "cashed_out" | "cancelled", actualPayout?: string): Promise<Bet | undefined> {
+  async updateBetStatus(betId: string, status: "pending" | "won" | "lost" | "cashed_out" | "cancelled", actualPayout?: string, cashOutMultiplier?: string): Promise<Bet | undefined> {
     const bet = this.bets.get(betId);
     if (!bet) return undefined;
     
@@ -6639,6 +6642,9 @@ export class MemStorage implements IStorage {
     };
     if (actualPayout !== undefined) {
       updatedBet.actualPayout = actualPayout;
+    }
+    if (cashOutMultiplier !== undefined) {
+      updatedBet.cashOutMultiplier = cashOutMultiplier;
     }
     this.bets.set(betId, updatedBet);
     return updatedBet;

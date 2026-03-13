@@ -15861,7 +15861,7 @@ export async function registerRoutes(app: Express): Promise<{ httpServer: Server
       await storage.atomicIncrementBalance(userId, winAmount.toString());
       const bet = await storage.getUserActiveCrashBet(userId, crashGameState.gameId!);
       if (bet) {
-        await storage.updateBetStatus(bet.id, 'cashed_out', winAmount.toString());
+        await storage.updateBetStatus(bet.id, 'cashed_out', winAmount.toString(), multiplier.toString());
       }
       return true;
     } catch (error) {
