@@ -47,10 +47,17 @@ export function useCrashGame() {
 
   const animRef = useRef<number>(0);
 
-  // Fetch history from API
+  // Fetch global crash history from API
   const { data: historyData = [] } = useQuery<number[]>({
     queryKey: ['/api/crash/history'],
     enabled: !!user,
+  });
+
+  // Fetch personal bet history
+  const { data: betHistoryData = [] } = useQuery<HistoryEntry[]>({
+    queryKey: ['/api/crash/bet-history'],
+    enabled: !!user,
+    refetchInterval: 10000, // Refresh every 10s to keep it updated
   });
 
   // Fetch active bet on mount or user change
@@ -78,18 +85,10 @@ export function useCrashGame() {
     }
   }, [myBetData]);
 
-  // Convert number array to HistoryEntry array (simplified for now)
-  const history: HistoryEntry[] = useMemo(() => {
-    return historyData.map((cp, i) => ({
-      id: `hist-${i}`,
-      crashPoint: cp,
-      bet: 0,
-      cashedOut: false,
-      cashOutMultiplier: null,
-      win: 0,
-      timestamp: Date.now(),
-    }));
-  }, [historyData]);
+  // Use betHistoryData for the history tab
+  const history = useMemo(() => {
+    return betHistoryData;
+  }, [betHistoryData]);
 
   const lastCrashes = historyData;
 

@@ -15712,7 +15712,9 @@ export async function registerRoutes(app: Express): Promise<{ httpServer: Server
     personalStates: new Map()
   };
 
-  let crashGameHistory: number[] = []; // Store last 15 crash points
+  let crashGameHistory: any[] = []; // Store last 15 crash rounds with metadata
+  let roundsWithBetsInCycle = 0;
+  let lowCrashesInCycle = 0;
   let crashGameInterval: NodeJS.Timeout | null = null;
   let crashGameTimer: NodeJS.Timeout | null = null;
   let isProcessingCashouts = false; // Prevent overlapping cashout processing
@@ -15832,11 +15834,9 @@ export async function registerRoutes(app: Express): Promise<{ httpServer: Server
       if (!hasRealPlayers) {
         const randomness = Math.random();
         if (randomness < 0.30) {
-          // 30% chance: Quick Crash (1.01x - 1.99x)
           const crash = 1.01 + Math.random() * (1.99 - 1.01);
           return Math.round(crash * 100) / 100;
         } else {
-          // 70% chance: High Multiplier (High Bait mode)
           const minBait = parseFloat(advancedSettings?.noBetBaitMinMultiplier || '7.00');
           const maxBait = parseFloat(advancedSettings?.noBetBaitMaxMultiplier || '20.00');
           const crash = minBait + Math.random() * (maxBait - minBait);
@@ -15844,28 +15844,46 @@ export async function registerRoutes(app: Express): Promise<{ httpServer: Server
         }
       }
 
-      const houseEdge = parseFloat(settings.houseEdge) / 100; // e.g., 0.20
+      // Feature: Forced Low Crash (1-2 out of 5 rounds with bets)
+      roundsWithBetsInCycle++;
+      const shouldForceLow = 
+        (roundsWithBetsInCycle >= 5 && lowCrashesInCycle < 1) || 
+        (Math.random() < 0.25 && lowCrashesInCycle < 2); // Probabilistic force
+
+      if (shouldForceLow) {
+        lowCrashesInCycle++;
+        if (roundsWithBetsInCycle >= 5) {
+          roundsWithBetsInCycle = 0;
+          lowCrashesInCycle = 0;
+        }
+        console.log(`📉 Forced Low Crash triggered (${lowCrashesInCycle}/2 in cycle of ${roundsWithBetsInCycle})`);
+        const crash = 1.01 + Math.random() * (1.99 - 1.01);
+        return Math.round(crash * 100) / 100;
+      }
+
+      if (roundsWithBetsInCycle >= 5) {
+        roundsWithBetsInCycle = 0;
+        lowCrashesInCycle = 0;
+      }
+
+      const houseEdge = parseFloat(settings.houseEdge) / 100;
       const maxMultiplierSetting = parseFloat(settings.maxMultiplier);
       const minMultiplier = parseFloat(settings.minCrashMultiplier);
       const maxUserPayout = parseFloat(settings.maxUserPayout || '0');
 
       const R = Math.random();
-      // Formula: (1 - House Edge) / R
       let crashPoint = (1 - houseEdge) / R;
       
-      // Enforce Admin Max Payout if set (> 0) and we have real players
       let effectiveMax = maxMultiplierSetting;
       if (hasRealPlayers && maxUserPayout > 0) {
         effectiveMax = Math.min(effectiveMax, maxUserPayout);
       }
 
-      // Enforce limits
       crashPoint = Math.max(minMultiplier, Math.min(effectiveMax, crashPoint));
       
       return Math.round(crashPoint * 100) / 100;
     } catch (error) {
       console.error('Error generating crash point from settings:', error);
-      // Fallback to default 20% house edge
       const R = Math.random();
       const crashPoint = Math.max(1.01, Math.min(50, (1 - 0.20) / R));
       return Math.round(crashPoint * 100) / 100;
@@ -16058,12 +16076,21 @@ export async function registerRoutes(app: Express): Promise<{ httpServer: Server
     
     crashGameState.phase = 'crashed';
     
-    // Add to history (keep last 15)
-    if (crashGameState.globalCrashPoint) {
-      crashGameHistory.unshift(crashGameState.globalCrashPoint);
-      if (crashGameHistory.length > 15) {
-        crashGameHistory = crashGameHistory.slice(0, 15);
-      }
+    // Feature: Enhanced history tracking
+    const historyEntry = {
+      gameId: crashGameState.gameId,
+      crashPoint: crashGameState.multiplier, // Use final multiplier reached
+      globalCrashPoint: crashGameState.globalCrashPoint,
+      personalCrashes: Array.from(crashGameState.personalStates.entries()).map(([uid, state]) => ({
+        userId: uid,
+        crashPoint: state.hasCrashed ? state.crashedAtMultiplier : crashGameState.multiplier
+      })),
+      timestamp: Date.now()
+    };
+
+    crashGameHistory.unshift(historyEntry);
+    if (crashGameHistory.length > 20) {
+      crashGameHistory = crashGameHistory.slice(0, 20);
     }
     
     // Layer 1: Record round + per-user losses
@@ -16144,15 +16171,14 @@ export async function registerRoutes(app: Express): Promise<{ httpServer: Server
         const autoCashout = Math.random() > 0.4 ? (1.1 + Math.random() * 5.0) : undefined;
         
         crashGameState.players.push({
-          userId: `fake_${addedFakePlayers}_${Date.now()}`,
+          userId: `fake_${Date.now()}_${addedFakePlayers}`,
           username,
           bet: betAmount,
           cashedOut: false,
-          autoCashout: autoCashout ? Math.round(autoCashout * 100) / 100 : undefined,
+          autoCashout
         });
         
         addedFakePlayers++;
-        
         broadcastPersonalizedCrashUpdates('crashGameUpdate');
       }, intervalDelay);
 
@@ -16235,14 +16261,41 @@ export async function registerRoutes(app: Express): Promise<{ httpServer: Server
 
   // Crash game history endpoint
   app.get('/api/crash/history', requireAuth, async (req, res) => {
-    // Check if crash game is enabled (maintenance mode check)
-    const crashEnabledSetting = await storage.getSystemSetting('crash_enabled');
-    const crashEnabled = crashEnabledSetting?.value !== 'false';
-    if (!crashEnabled) {
-      return res.status(503).json({ message: 'Crash game is currently under maintenance' });
-    }
+    const userId = (req.session as any).userId!;
+    const personalizedHistory = crashGameHistory.map(entry => {
+      const personal = entry.personalCrashes?.find((pc: any) => pc.userId === userId);
+      return personal ? personal.crashPoint : (entry.crashPoint || entry.globalCrashPoint);
+    });
+    res.json(personalizedHistory);
+  });
 
-    res.json(crashGameHistory);
+  app.get('/api/crash/bet-history', requireAuth, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId!;
+      const bets = await storage.getBetsByUser(userId);
+      const crashBets = bets
+        .filter(b => b.gameType === 'crash')
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+        .slice(0, 15)
+        .map(b => {
+          const roundInHistory = crashGameHistory.find(h => h.gameId === b.gameId);
+          const personal = roundInHistory?.personalCrashes?.find((pc: any) => pc.userId === userId);
+          return {
+            id: b.id,
+            gameId: b.gameId,
+            crashPoint: personal ? personal.crashPoint : (roundInHistory ? roundInHistory.crashPoint : 0),
+            bet: parseFloat(b.amount),
+            cashedOut: b.status === 'cashed_out',
+            cashOutMultiplier: b.cashOutMultiplier ? parseFloat(b.cashOutMultiplier) : null,
+            win: parseFloat(b.actualPayout || "0"),
+            timestamp: b.createdAt.getTime()
+          };
+        });
+      res.json(crashBets);
+    } catch (error) {
+      console.error('Error fetching crash bet history:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
   });
 
   app.post('/api/crash/bet', requireAuth, async (req, res) => {

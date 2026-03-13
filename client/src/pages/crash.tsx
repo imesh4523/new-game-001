@@ -386,14 +386,28 @@ const CrashGame: React.FC = () => {
         {activeTab === "tc" && (
           <div className="flex-1 px-4 pb-2 mt-3">
             <div className="rounded-2xl p-5 text-sm leading-relaxed space-y-3 bg-crash-surface border border-border">
-              <h2 className="font-black text-lg">Terms & Conditions</h2>
-              <p className="text-muted-foreground">This is a <strong className="text-foreground">demo/simulation game</strong> for entertainment purposes only. No real money is involved.</p>
-              <p className="text-muted-foreground">• All currency shown is virtual coins with no real-world value.</p>
-              <p className="text-muted-foreground">• Starting balance is 100,000 coins. Use the "+" button to reset.</p>
-              <p className="text-muted-foreground">• The crash point is randomly generated each round.</p>
-              <p className="text-muted-foreground">• Bot players are simulated for demonstration purposes.</p>
-              <p className="text-muted-foreground">• Game history is stored locally in your browser.</p>
-              <p className="text-muted-foreground">• This game does not promote or encourage real gambling.</p>
+              <h2 className="font-black text-lg flex items-center gap-2">
+                <FileText className="w-5 h-5 text-primary" />
+                Game Rules & Terms
+              </h2>
+              <div className="space-y-4 pt-2">
+                <section>
+                  <h3 className="font-bold text-foreground">1. Game Objective</h3>
+                  <p className="text-muted-foreground text-xs">Place a bet and watch the multiplier rise from 1.00x upwards. You must click "Cash Out" before the rocket crashes to win. If the rocket crashes before you cash out, your bet is lost.</p>
+                </section>
+                <section>
+                  <h3 className="font-bold text-foreground">2. Winnings Calculation</h3>
+                  <p className="text-muted-foreground text-xs">Your winnings are equal to your bet amount multiplied by the multiplier at the moment you cashed out. Example: 1,000 coins @ 2.50x = 2,500 coins payout.</p>
+                </section>
+                <section>
+                  <h3 className="font-bold text-foreground">3. Fairness & RNG</h3>
+                  <p className="text-muted-foreground text-xs">Every round's crash point is generated using a cryptographically secure random number generator (RNG) ensuring complete fairness. The house edge is set to maintain game sustainability.</p>
+                </section>
+                <section>
+                  <h3 className="font-bold text-foreground">4. Demo Disclaimer</h3>
+                  <p className="text-amber-500/80 text-[10px] italic">This is a simulation for entertainment purposes. All virtual currency (coins) has no real-world monetary value and cannot be exchanged for cash. Play responsibly.</p>
+                </section>
+              </div>
             </div>
           </div>
         )}
