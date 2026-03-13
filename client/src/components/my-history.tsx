@@ -29,7 +29,7 @@ export default function MyHistory() {
   const calculateUserStats = () => {
     if (!user) return null;
 
-    const winningBets = bets.filter(bet => bet.status === 'won');
+    const winningBets = bets.filter(bet => bet.status === 'won' || bet.status === 'cashed_out');
     const losingBets = bets.filter(bet => bet.status === 'lost');
     const totalBets = bets.length;
     
@@ -52,7 +52,8 @@ export default function MyHistory() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'won': return 'text-green-400 bg-green-500/10 border-green-500/20';
+      case 'won': 
+      case 'cashed_out': return 'text-green-400 bg-green-500/10 border-green-500/20';
       case 'lost': return 'text-red-400 bg-red-500/10 border-red-500/20';
       case 'pending': return 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20';
       default: return 'text-gray-400 bg-gray-500/10 border-gray-500/20';
@@ -61,7 +62,8 @@ export default function MyHistory() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'won': return <Trophy className="w-4 h-4" />;
+      case 'won': 
+      case 'cashed_out': return <Trophy className="w-4 h-4" />;
       case 'lost': return <X className="w-4 h-4" />;
       case 'pending': return <Clock className="w-4 h-4" />;
       default: return <Clock className="w-4 h-4" />;
@@ -241,8 +243,8 @@ export default function MyHistory() {
                           </div>
                           <div className="flex items-center justify-between border-t border-white/5 pt-1.5">
                             <span className="text-xs font-medium text-white/50">Payout</span>
-                            <span className={`text-sm font-black ${bet.status === 'won' ? 'text-green-400' : 'text-red-400'}`}>
-                              {bet.status === 'won' 
+                            <span className={`text-sm font-black ${ (bet.status === 'won' || bet.status === 'cashed_out') ? 'text-green-400' : 'text-red-400'}`}>
+                              {(bet.status === 'won' || bet.status === 'cashed_out')
                                 ? '+' + formatGoldCoins(usdToGoldCoins(bet.actualPayout || bet.potential || bet.amount)) 
                                 : formatGoldCoins('0')}
                             </span>

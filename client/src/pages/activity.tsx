@@ -60,19 +60,29 @@ const transformBetsToActivity = (bets: any[]): ActivityItem[] => {
   const FEE_PERCENTAGE = 3;
   
   bets.forEach((bet: any) => {
+    const getTypeName = (type: string) => {
+      switch(type) {
+        case 'color': return 'Color';
+        case 'number': return 'Number';
+        case 'size': return 'Size';
+        case 'crash': return 'Crash';
+        default: return type.charAt(0).toUpperCase() + type.slice(1);
+      }
+    };
+
     const displayValue = getDisplayValue(bet.betType, bet.betValue);
     const betAmount = parseFloat(bet.amount);
     
-    if (bet.status === 'won') {
-      const actualPayout = parseFloat(bet.actualPayout || bet.potential);
-      const potentialPayout = parseFloat(bet.potential);
-      const feeDeducted = potentialPayout - actualPayout;
+    if (bet.status === 'won' || bet.status === 'cashed_out') {
+      const actualPayout = parseFloat(bet.actualPayout || bet.potential || bet.amount);
+      const potentialPayout = parseFloat(bet.potential || actualPayout);
+      const feeDeducted = Math.max(0, potentialPayout - actualPayout);
       
       activities.push({
         id: `win-${bet.id}`,
         type: 'win',
         amount: String(actualPayout),
-        description: `Won ${bet.betType === 'color' ? 'Color' : bet.betType === 'number' ? 'Number' : 'Size'} Bet - ${displayValue}`,
+        description: `${bet.status === 'cashed_out' ? 'Cashed Out' : 'Won'} ${getTypeName(bet.betType)} Bet ${bet.cashOutMultiplier ? `(${bet.cashOutMultiplier}x)` : ''} - ${displayValue}`,
         timestamp: bet.updatedAt || bet.createdAt,
         gameId: bet.gameId,
         status: 'completed',
@@ -85,7 +95,7 @@ const transformBetsToActivity = (bets: any[]): ActivityItem[] => {
         id: `loss-${bet.id}`,
         type: 'loss',
         amount: bet.amount,
-        description: `Lost ${bet.betType === 'color' ? 'Color' : bet.betType === 'number' ? 'Number' : 'Size'} Bet - ${displayValue}`,
+        description: `Lost ${getTypeName(bet.betType)} Bet - ${displayValue}`,
         timestamp: bet.updatedAt || bet.createdAt,
         gameId: bet.gameId,
         status: 'completed',
@@ -98,7 +108,7 @@ const transformBetsToActivity = (bets: any[]): ActivityItem[] => {
         id: `bet-${bet.id}`,
         type: 'bet',
         amount: bet.amount,
-        description: `Pending ${bet.betType === 'color' ? 'Color' : bet.betType === 'number' ? 'Number' : 'Size'} Bet - ${displayValue}`,
+        description: `Pending ${getTypeName(bet.betType)} Bet - ${displayValue}`,
         timestamp: bet.createdAt,
         gameId: bet.gameId,
         status: 'pending',
