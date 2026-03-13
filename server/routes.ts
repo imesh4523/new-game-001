@@ -16039,16 +16039,15 @@ export async function registerRoutes(app: Express): Promise<{ httpServer: Server
       const currentRealPlayers = crashGameState.players.filter(p => !p.userId.startsWith('fake_'));
       for (const player of currentRealPlayers) {
         const pState = crashGameState.personalStates.get(player.userId);
-        if (pState && !pState.hasCrashed && crashGameState.multiplier >= pState.crashPoint) {
+        // CRITICAL FIX: If player has already cashed out, do NOT trigger their personal crash.
+        // Let them enjoy the global visual flight until the real end.
+        if (pState && !pState.hasCrashed && !player.cashedOut && crashGameState.multiplier >= pState.crashPoint) {
           pState.hasCrashed = true;
           pState.crashedAtMultiplier = crashGameState.multiplier;
           
-          // They lose, unless they already cashed out
-          if (!player.cashedOut) {
-            storage.getUserActiveCrashBet(player.userId, crashGameState.gameId!).then(bet => {
-              if (bet) storage.updateBetStatus(bet.id, 'lost', '0');
-            }).catch(e => console.error(e));
-          }
+          storage.getUserActiveCrashBet(player.userId, crashGameState.gameId!).then(bet => {
+            if (bet) storage.updateBetStatus(bet.id, 'lost', '0');
+          }).catch(e => console.error(e));
         }
       }
 
@@ -16264,7 +16263,10 @@ export async function registerRoutes(app: Express): Promise<{ httpServer: Server
     const userId = (req.session as any).userId!;
     const personalizedHistory = crashGameHistory.map(entry => {
       const personal = entry.personalCrashes?.find((pc: any) => pc.userId === userId);
-      return personal ? personal.crashPoint : (entry.crashPoint || entry.globalCrashPoint);
+      return {
+        gameId: entry.gameId,
+        crashPoint: personal ? personal.crashPoint : (entry.crashPoint || entry.globalCrashPoint)
+      };
     });
     res.json(personalizedHistory);
   });
@@ -16274,7 +16276,7 @@ export async function registerRoutes(app: Express): Promise<{ httpServer: Server
       const userId = (req.session as any).userId!;
       const bets = await storage.getBetsByUser(userId);
       const crashBets = bets
-        .filter(b => b.gameType === 'crash')
+        .filter(b => b.betType === 'crash') // FIXED: betType instead of gameType
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
         .slice(0, 15)
         .map(b => {

@@ -21,6 +21,7 @@ export interface BotPlayer {
 
 export interface HistoryEntry {
   id: string;
+  gameId: string;
   crashPoint: number;
   bet: number;
   cashedOut: boolean;
@@ -48,7 +49,7 @@ export function useCrashGame() {
   const animRef = useRef<number>(0);
 
   // Fetch global crash history from API
-  const { data: historyData = [] } = useQuery<number[]>({
+  const { data: historyData = [] } = useQuery<{ gameId: string, crashPoint: number }[]>({
     queryKey: ['/api/crash/history'],
     enabled: !!user,
   });
@@ -85,12 +86,27 @@ export function useCrashGame() {
     }
   }, [myBetData]);
 
-  // Use betHistoryData for the history tab
+  // Merge histories for the UI
   const history = useMemo(() => {
-    return betHistoryData;
-  }, [betHistoryData]);
+    return historyData.map((h) => {
+      // Find if we have a bet record for this crash round
+      const bet = betHistoryData.find(b => b.gameId === h.gameId);
+      if (bet) return bet;
+      
+      return {
+        id: `hist-${h.gameId}`,
+        gameId: h.gameId,
+        crashPoint: h.crashPoint,
+        bet: 0,
+        cashedOut: false,
+        cashOutMultiplier: null,
+        win: 0,
+        timestamp: Date.now(),
+      };
+    });
+  }, [historyData, betHistoryData]);
 
-  const lastCrashes = historyData;
+  const lastCrashes = useMemo(() => historyData.map(h => h.crashPoint), [historyData]);
 
   // Local multiplier animation
   useEffect(() => {
