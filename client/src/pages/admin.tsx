@@ -62,7 +62,8 @@ import {
   AlertCircle,
   ListOrdered,
   History as HistoryIcon,
-  Brain
+  Brain,
+  ShieldCheck
 } from "lucide-react";
 import { memo } from "react";
 import { Button } from "@/components/ui/button";

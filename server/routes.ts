@@ -15199,7 +15199,7 @@ export async function registerRoutes(app: Express): Promise<{ httpServer: Server
         const user = await storage.getUser(bet.userId);
         return {
           ...bet,
-          username: user?.username || 'Unknown User',
+          username: user?.email ? user.email.split('@')[0] : 'Unknown User',
           email: user?.email || 'No email'
         };
       }));
