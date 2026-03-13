@@ -2621,6 +2621,7 @@ export class DatabaseStorage implements IStorage {
         maxMultiplier: updates.maxMultiplier ?? "50.00",
         minCrashMultiplier: updates.minCrashMultiplier ?? "1.01",
         crashEnabled: updates.crashEnabled ?? true,
+        maxUserPayout: updates.maxUserPayout ?? "0.00",
         updatedBy: updates.updatedBy ?? 'system',
         createdAt: new Date(),
         updatedAt: new Date()

@@ -988,6 +988,7 @@ function CrashSettingsManager() {
   const [minMultiplier, setMinMultiplier] = useState("1.01");
   const [minBetAmount, setMinBetAmount] = useState("50");
   const [maxBetAmount, setMaxBetAmount] = useState("10000");
+  const [maxUserPayout, setMaxUserPayout] = useState("0");
 
   // Advanced settings states
   const [deepThinkingEnabled, setDeepThinkingEnabled] = useState(false);
@@ -1005,6 +1006,7 @@ function CrashSettingsManager() {
       setMinMultiplier(settings.minMultiplier || settings.minCrashMultiplier || "1.01");
       setMinBetAmount(settings.minBetAmount || "50");
       setMaxBetAmount(settings.maxBetAmount || "10000");
+      setMaxUserPayout(settings.maxUserPayout || "0");
     }
   }, [settings]);
 
@@ -1032,7 +1034,7 @@ function CrashSettingsManager() {
 
   const handleSave = () => {
     updateSettingsMutation.mutate({
-      basic: { houseEdge, maxMultiplier, minMultiplier, minBetAmount, maxBetAmount },
+      basic: { houseEdge, maxMultiplier, minMultiplier, minBetAmount, maxBetAmount, maxUserPayout },
       advanced: {
         deepThinkingEnabled,
         whaleTargetMinMultiplier,
@@ -1172,6 +1174,20 @@ function CrashSettingsManager() {
               onChange={(e) => setMaxMultiplier(e.target.value)}
               className="bg-slate-800/50 border-orange-500/30 text-white"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="maxUserPayout" className="text-orange-200 font-bold">Max User Payout (x) 🎯</Label>
+            <Input
+              id="maxUserPayout"
+              type="number"
+              step="0.1"
+              min="0"
+              value={maxUserPayout}
+              onChange={(e) => setMaxUserPayout(e.target.value)}
+              className="bg-slate-800/50 border-orange-500/30 text-white border-dashed"
+            />
+            <p className="text-[10px] text-orange-400 font-medium">0 = No Limit. Stops flight if users bet.</p>
           </div>
         </div>
 

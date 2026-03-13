@@ -1317,6 +1317,7 @@ export const crashSettings = pgTable("crash_settings", {
   minBetAmount: decimal("min_bet_amount", { precision: 18, scale: 2 }).notNull().default("50.00"), // Min bet in coins
   maxBetAmount: decimal("max_bet_amount", { precision: 18, scale: 2 }).notNull().default("10000.00"), // Max bet in coins
   crashEnabled: boolean("crash_enabled").notNull().default(true),
+  maxUserPayout: decimal("max_user_payout", { precision: 10, scale: 2 }).notNull().default("0.00"), // Max payout to users when betting, 0 = no limit
   updatedBy: varchar("updated_by").notNull(), // FK to users
   createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: timestamp("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),

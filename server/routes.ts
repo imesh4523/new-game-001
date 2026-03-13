@@ -15154,13 +15154,14 @@ export async function registerRoutes(app: Express): Promise<{ httpServer: Server
 
   app.post('/api/admin/crash/settings', requireAdmin, async (req, res) => {
     try {
-      const { houseEdge, maxMultiplier, minMultiplier, minBetAmount, maxBetAmount } = req.body;
+      const { houseEdge, maxMultiplier, minMultiplier, minBetAmount, maxBetAmount, maxUserPayout } = req.body;
       const settings = await storage.updateCrashSettings({
         houseEdge: String(houseEdge),
         maxMultiplier: String(maxMultiplier),
         minCrashMultiplier: String(minMultiplier),
         ...(minBetAmount !== undefined && { minBetAmount: String(minBetAmount) }),
         ...(maxBetAmount !== undefined && { maxBetAmount: String(maxBetAmount) }),
+        ...(maxUserPayout !== undefined && { maxUserPayout: String(maxUserPayout) }),
       });
       res.json(settings);
     } catch (error) {
@@ -15820,21 +15821,46 @@ export async function registerRoutes(app: Express): Promise<{ httpServer: Server
 
   // Generate crash point following 20% house edge specification
   // Formula: (1 - House Edge) / R
-  async function generateCrashPoint(): Promise<number> {
+  async function generateCrashPoint(hasRealPlayers: boolean = false): Promise<number> {
     try {
       const settings = await storage.getCrashSettings();
       if (!settings) throw new Error("Settings not found");
+      
+      const advancedSettings = await storage.getAdvancedCrashSettings();
+      
+      // Feature: 70/30 split for rounds without real players
+      if (!hasRealPlayers) {
+        const randomness = Math.random();
+        if (randomness < 0.30) {
+          // 30% chance: Quick Crash (1.01x - 1.99x)
+          const crash = 1.01 + Math.random() * (1.99 - 1.01);
+          return Math.round(crash * 100) / 100;
+        } else {
+          // 70% chance: High Multiplier (High Bait mode)
+          const minBait = parseFloat(advancedSettings?.noBetBaitMinMultiplier || '7.00');
+          const maxBait = parseFloat(advancedSettings?.noBetBaitMaxMultiplier || '20.00');
+          const crash = minBait + Math.random() * (maxBait - minBait);
+          return Math.round(crash * 100) / 100;
+        }
+      }
+
       const houseEdge = parseFloat(settings.houseEdge) / 100; // e.g., 0.20
-      const maxMultiplier = parseFloat(settings.maxMultiplier);
+      const maxMultiplierSetting = parseFloat(settings.maxMultiplier);
       const minMultiplier = parseFloat(settings.minCrashMultiplier);
+      const maxUserPayout = parseFloat(settings.maxUserPayout || '0');
 
       const R = Math.random();
       // Formula: (1 - House Edge) / R
-      // If R is very small, multiplier becomes very large. We cap it at maxMultiplier.
       let crashPoint = (1 - houseEdge) / R;
       
+      // Enforce Admin Max Payout if set (> 0) and we have real players
+      let effectiveMax = maxMultiplierSetting;
+      if (hasRealPlayers && maxUserPayout > 0) {
+        effectiveMax = Math.min(effectiveMax, maxUserPayout);
+      }
+
       // Enforce limits
-      crashPoint = Math.max(minMultiplier, Math.min(maxMultiplier, crashPoint));
+      crashPoint = Math.max(minMultiplier, Math.min(effectiveMax, crashPoint));
       
       return Math.round(crashPoint * 100) / 100;
     } catch (error) {
@@ -15871,13 +15897,14 @@ export async function registerRoutes(app: Express): Promise<{ httpServer: Server
   }
 
   async function startCrashGame() {
-    const crashPoint = await generateCrashPoint();
+    const allPlayers = crashGameState.players.map(p => ({ ...p, cashedOut: false }));
+    const realPlayers = allPlayers.filter(p => !p.userId.startsWith('fake_'));
+    
+    // Pass hasRealPlayers to generateCrashPoint to apply 70/30 split or Max Payout
+    const crashPoint = await generateCrashPoint(realPlayers.length > 0);
     let globalCrashPoint = crashPoint;
     const gameId = crashGameState.gameId || `crash_${Date.now()}`;
     
-    // Only keep real players and any fake players that joined during waiting
-    const allPlayers = crashGameState.players.map(p => ({ ...p, cashedOut: false }));
-    const realPlayers = allPlayers.filter(p => !p.userId.startsWith('fake_'));
     
     // Setup personalized targets
     const advancedSettings = await storage.getAdvancedCrashSettings();
@@ -15974,6 +16001,17 @@ export async function registerRoutes(app: Express): Promise<{ httpServer: Server
             const success = await settleCrashCashout(player.userId, crashGameState.multiplier, player.bet);
             if (success) {
               console.log(`🎯 Auto cash-out: ${player.userId.slice(0, 6)} @ ${crashGameState.multiplier}x`);
+              
+              // Feature: Post-Cashout Flight extension
+              // If this was a real player cashing out, extend the visual round
+              if (crashGameState.globalCrashPoint) {
+                const extension = 2.0 + Math.random() * 5.0; // Extend by 2x to 7x
+                const newVisualPoint = crashGameState.multiplier + extension;
+                if (newVisualPoint > crashGameState.globalCrashPoint) {
+                  console.log(`✈️ Visual Extension active: ${crashGameState.globalCrashPoint}x -> ${newVisualPoint.toFixed(2)}x`);
+                  crashGameState.globalCrashPoint = Math.round(newVisualPoint * 100) / 100;
+                }
+              }
             }
           }
         }
@@ -16333,6 +16371,17 @@ export async function registerRoutes(app: Express): Promise<{ httpServer: Server
       }
 
       const winAmount = player.bet * crashGameState.multiplier;
+
+      // Feature: Post-Cashout Flight extension
+      // If this was a real player cashing out, extend the visual round
+      if (crashGameState.globalCrashPoint) {
+        const extension = 2.0 + Math.random() * 5.0; // Extend by 2x to 7x
+        const newVisualPoint = crashGameState.multiplier + extension;
+        if (newVisualPoint > crashGameState.globalCrashPoint) {
+          console.log(`✈️ Visual Extension active (Manual): ${crashGameState.globalCrashPoint}x -> ${newVisualPoint.toFixed(2)}x`);
+          crashGameState.globalCrashPoint = Math.round(newVisualPoint * 100) / 100;
+        }
+      }
 
       broadcastPersonalizedCrashUpdates('crashGameUpdate');
 
