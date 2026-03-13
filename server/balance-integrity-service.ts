@@ -74,7 +74,7 @@ class BalanceIntegrityService {
           totalCommissionWithdrawals: sql<string>`COALESCE(SUM(CASE WHEN ${transactions.type} = 'commission_withdrawal' AND ${transactions.status} = 'completed' THEN CAST(${transactions.fiatAmount} AS NUMERIC) ELSE 0 END), 0)`,
           totalWithdrawals: sql<string>`COALESCE(SUM(CASE WHEN ${transactions.type} = 'withdrawal' AND ${transactions.status} = 'completed' THEN CAST(${transactions.fiatAmount} AS NUMERIC) ELSE 0 END), 0)`,
           totalBets: sql<string>`COALESCE((SELECT SUM(CAST(amount AS NUMERIC)) FROM ${bets} WHERE ${bets.userId} = ${userId}), 0)`,
-          totalWinnings: sql<string>`COALESCE((SELECT SUM(CAST(actual_payout AS NUMERIC)) FROM ${bets} WHERE ${bets.userId} = ${userId} AND ${bets.status} = 'won' AND actual_payout IS NOT NULL), 0)`,
+          totalWinnings: sql<string>`COALESCE((SELECT SUM(CAST(actual_payout AS NUMERIC)) FROM ${bets} WHERE ${bets.userId} = ${userId} AND (${bets.status} = 'won' OR ${bets.status} = 'cashed_out' OR ${bets.status} = 'cancelled') AND actual_payout IS NOT NULL), 0)`,
           transactionCount: sql<number>`COUNT(*)`,
           lastTransactionDate: sql<Date>`MAX(${transactions.createdAt})`
         })
